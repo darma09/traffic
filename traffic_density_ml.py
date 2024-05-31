@@ -34,11 +34,18 @@ def train_model(X, y):
     r2 = r2_score(y_test, y_pred)
     return model, mse, r2, X_test, y_test, y_pred
 
+# Fungsi untuk menentukan waktu lampu hijau berdasarkan kepadatan lalu lintas
+def calculate_cycle_time(volume):
+    min_time = 3  # waktu minimum dalam detik
+    max_time = 60  # waktu maksimum dalam detik
+    scale_factor = 10  # faktor skala untuk menyesuaikan waktu
+    return max(min_time, min(volume // scale_factor, max_time))
+
 # Simulasi lampu lalu lintas
 def traffic_light_simulation(predictions):
     sorted_traffic = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
     
-    cycle_times = {direction: max(3, int(vehicles) // 10 * 3) for direction, vehicles in sorted_traffic}
+    cycle_times = {direction: calculate_cycle_time(vehicles) for direction, vehicles in sorted_traffic}
 
     if 'step' not in st.session_state:
         st.session_state.step = 0
