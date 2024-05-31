@@ -1,8 +1,7 @@
 import streamlit as st
 import time
-import threading
 
-def traffic_light_simulation(north, south, east, west, stop_event):
+def traffic_light_simulation(north, south, east, west):
     traffic = {'Utara': north, 'Selatan': south, 'Timur': east, 'Barat': west}
     sorted_traffic = sorted(traffic.items(), key=lambda x: x[1], reverse=True)
     
@@ -14,19 +13,22 @@ def traffic_light_simulation(north, south, east, west, stop_event):
     for direction, vehicles in sorted_traffic:
         st.write(f"{direction}: {vehicles} kendaraan, {cycle_times[direction]} detik lampu hijau")
     
-    while not stop_event.is_set():
+    stop_simulation = st.session_state.get('stop_simulation', False)
+
+    while not stop_simulation:
         for direction, _ in sorted_traffic:
-            if stop_event.is_set():
-                break
+            if st.session_state.get('stop_simulation', False):
+                return
             st.write(f"#### Lampu hijau untuk arah {direction} selama {cycle_times[direction]} detik")
-            with st.spinner(f"Lampu hijau di arah {direction}..."):
-                for i in range(cycle_times[direction]):
-                    if stop_event.is_set():
-                        break
-                    st.image('https://via.placeholder.com/100x100.png?text=Hijau', caption=f"Lampu hijau {direction}", use_column_width=True)
-                    time.sleep(1)
-                st.image('https://via.placeholder.com/100x100.png?text=Merah', caption=f"Lampu merah {direction}", use_column_width=True)
+            for i in range(cycle_times[direction]):
+                if st.session_state.get('stop_simulation', False):
+                    return
+                st.image('https://via.placeholder.com/100x100.png?text=Hijau', caption=f"Lampu hijau {direction}", use_column_width=True)
+                time.sleep(1)
+                st.experimental_rerun()
+            st.image('https://via.placeholder.com/100x100.png?text=Merah', caption=f"Lampu merah {direction}", use_column_width=True)
             time.sleep(1)
+            st.experimental_rerun()
 
 def main():
     st.title('Simulasi Lampu Lalu Lintas Perempatan')
@@ -40,15 +42,16 @@ def main():
     east = st.number_input('Jumlah kendaraan dari Timur:', min_value=0, value=0)
     west = st.number_input('Jumlah kendaraan dari Barat:', min_value=0, value=0)
 
-    if 'stop_event' not in st.session_state:
-        st.session_state.stop_event = threading.Event()
+    if 'stop_simulation' not in st.session_state:
+        st.session_state.stop_simulation = False
 
     if st.button('Mulai Simulasi'):
-        st.session_state.stop_event.clear()
-        threading.Thread(target=traffic_light_simulation, args=(north, south, east, west, st.session_state.stop_event)).start()
+        st.session_state.stop_simulation = False
+        traffic_light_simulation(north, south, east, west)
 
     if st.button('Hentikan Simulasi'):
-        st.session_state.stop_event.set()
+        st.session_state.stop_simulation = True
+        st.write("Simulasi dihentikan.")
 
 if __name__ == "__main__":
     main()
