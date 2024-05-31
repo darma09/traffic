@@ -1,6 +1,6 @@
-
 import streamlit as st
 import time
+import threading
 
 def traffic_light_simulation(north, south, east, west, stop_event):
     traffic = {'Utara': north, 'Selatan': south, 'Timur': east, 'Barat': west}
@@ -26,6 +26,7 @@ def traffic_light_simulation(north, south, east, west, stop_event):
                     st.image('https://via.placeholder.com/100x100.png?text=Hijau', caption=f"Lampu hijau {direction}", use_column_width=True)
                     time.sleep(1)
                 st.image('https://via.placeholder.com/100x100.png?text=Merah', caption=f"Lampu merah {direction}", use_column_width=True)
+            time.sleep(1)
 
 def main():
     st.title('Simulasi Lampu Lalu Lintas Perempatan')
@@ -39,17 +40,15 @@ def main():
     east = st.number_input('Jumlah kendaraan dari Timur:', min_value=0, value=0)
     west = st.number_input('Jumlah kendaraan dari Barat:', min_value=0, value=0)
 
-    stop_event = st.experimental_get_query_params().get('stop', [False])[0] == 'true'
+    if 'stop_event' not in st.session_state:
+        st.session_state.stop_event = threading.Event()
 
     if st.button('Mulai Simulasi'):
-        stop_event = False
-        st.experimental_set_query_params(stop='false')
-        traffic_light_simulation(north, south, east, west, stop_event)
+        st.session_state.stop_event.clear()
+        threading.Thread(target=traffic_light_simulation, args=(north, south, east, west, st.session_state.stop_event)).start()
 
     if st.button('Hentikan Simulasi'):
-        stop_event = True
-        st.experimental_set_query_params(stop='true')
+        st.session_state.stop_event.set()
 
 if __name__ == "__main__":
     main()
-```
