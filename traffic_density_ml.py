@@ -19,7 +19,7 @@ def preprocess_data(data):
     data['day_of_week'] = data['date_time'].dt.dayofweek
     data['month'] = data['date_time'].dt.month
 
-    features = ['hour', 'day_of_week', 'month', 'temp', 'rain_1h', 'snow_1h', 'clouds_all']
+    features = ['hour', 'day_of_week', 'month', 'temp', 'rain_1h', 'clouds_all']
     X = data[features]
     y = data['traffic_volume']
     return X, y
@@ -103,17 +103,22 @@ def main():
 
     st.sidebar.header('Prediksi Berdasarkan Waktu dan Cuaca')
     hour = st.sidebar.slider('Jam', 0, 23, 12)
-    day_of_week = st.sidebar.slider('Hari dalam Minggu', 0, 6, 0)
-    month = st.sidebar.slider('Bulan', 1, 12, 1)
-    temp = st.sidebar.number_input('Suhu', value=288.0)
+    day_of_week = st.sidebar.selectbox('Hari dalam Minggu', ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'])
+    day_of_week_map = {'Senin': 0, 'Selasa': 1, 'Rabu': 2, 'Kamis': 3, 'Jumat': 4, 'Sabtu': 5, 'Minggu': 6}
+    day_of_week = day_of_week_map[day_of_week]
+    month = st.sidebar.selectbox('Bulan', ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'])
+    month_map = {'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4, 'Mei': 5, 'Juni': 6, 'Juli': 7, 'Agustus': 8, 'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12}
+    month = month_map[month]
+    temp = st.sidebar.number_input('Suhu (K)', value=288.0)
     rain_type = st.sidebar.selectbox('Jenis Hujan', ['Tidak Hujan', 'Gerimis', 'Sedang', 'Deras', 'Badai', 'Es'])
     rain_intensity_map = {'Tidak Hujan': 0, 'Gerimis': 1, 'Sedang': 2, 'Deras': 3, 'Badai': 4, 'Es': 5}
     rain_intensity = rain_intensity_map[rain_type]
-    snow_1h = st.sidebar.number_input('Curah Salju 1 Jam', value=0.0)
-    clouds_all = st.sidebar.number_input('Persentase Awan', value=40.0)
+    clouds_all = st.sidebar.selectbox('Persentase Awan', ['Cerah', 'Berawan Sedikit', 'Berawan Banyak', 'Mendung'])
+    clouds_all_map = {'Cerah': 0, 'Berawan Sedikit': 25, 'Berawan Banyak': 50, 'Mendung': 75}
+    clouds_all = clouds_all_map[clouds_all]
 
-    features = pd.DataFrame([[hour, day_of_week, month, temp, rain_intensity, snow_1h, clouds_all]], 
-                            columns=['hour', 'day_of_week', 'month', 'temp', 'rain_1h', 'snow_1h', 'clouds_all'])
+    features = pd.DataFrame([[hour, day_of_week, month, temp, rain_intensity, clouds_all]], 
+                            columns=['hour', 'day_of_week', 'month', 'temp', 'rain_1h', 'clouds_all'])
     predicted_volume = model.predict(features)[0]
 
     north = st.number_input('Jumlah kendaraan dari Utara:', min_value=0, value=int(predicted_volume))
