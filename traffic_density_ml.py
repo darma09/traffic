@@ -61,8 +61,20 @@ def traffic_light_simulation(predictions):
     for direction, vehicles in sorted_traffic:
         st.write(f"{direction}: {int(vehicles)} kendaraan, {cycle_times[direction]} detik lampu hijau")
 
-    st.write(f"#### Lampu hijau untuk arah {current_direction} selama {current_cycle_time} detik")
-    st.image('https://via.placeholder.com/100x100.png?text=Hijau', caption=f"Lampu hijau {current_direction}", use_column_width=True)
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.write("Utara")
+        st.image('https://via.placeholder.com/100x100.png?text=Hijau' if current_direction == 'Utara' else 'https://via.placeholder.com/100x100.png?text=Merah', use_column_width=True)
+    with col2:
+        st.write("Selatan")
+        st.image('https://via.placeholder.com/100x100.png?text=Hijau' if current_direction == 'Selatan' else 'https://via.placeholder.com/100x100.png?text=Merah', use_column_width=True)
+    with col3:
+        st.write("Timur")
+        st.image('https://via.placeholder.com/100x100.png?text=Hijau' if current_direction == 'Timur' else 'https://via.placeholder.com/100x100.png?text=Merah', use_column_width=True)
+    with col4:
+        st.write("Barat")
+        st.image('https://via.placeholder.com/100x100.png?text=Hijau' if current_direction == 'Barat' else 'https://via.placeholder.com/100x100.png?text=Merah', use_column_width=True)
     
     if st.session_state.step < current_cycle_time:
         st.session_state.step += 1
