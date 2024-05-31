@@ -1,5 +1,3 @@
-pip install -r requirements.txt
-
 import streamlit as st
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -64,4 +62,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-streamlit run traffic_density_ml.py
