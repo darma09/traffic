@@ -3,6 +3,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import img_to_array
+from PIL import Image
+import numpy as np
 import time
 
 # Memuat dataset
@@ -90,12 +94,24 @@ def traffic_light_simulation(predictions, rain_intensity):
         st.session_state.step = 0
         st.session_state.direction_idx = (st.session_state.direction_idx + 1) % len(directions)
 
+# Fungsi untuk preprocessing gambar
+def preprocess_image(image):
+    image = image.resize((150, 150))
+    image = img_to_array(image)
+    image = np.expand_dims(image, axis=0)
+    image = image / 255.0
+    return image
+
+# Fungsi untuk prediksi gambar
+def predict_image(image, model):
+    class_names = ['Mobil', 'Motor', 'Bis', 'Pejalan Kaki']
+    image = preprocess_image(image)
+    predictions = model.predict(image)
+    predicted_class = class_names[np.argmax(predictions)]
+    return predicted_class
+
 def main():
-    st.title('Simulasi Lampu Lalu Lintas Perempatan')
-    st.markdown("""
-        Masukkan jumlah kendaraan di masing-masing arah untuk mensimulasikan skema lampu lalu lintas.
-        Sistem akan mengatur durasi lampu hijau berdasarkan kepadatan kendaraan dan intensitas hujan.
-    """)
+    st.title('Simulasi Lampu Lalu Lintas Perempatan dan Deteksi Objek')
 
     data = load_data()
     X, y = preprocess_data(data)
@@ -132,8 +148,6 @@ def main():
     if st.button('Mulai Simulasi'):
         st.session_state.stop_simulation = False
         st.session_state.step = 0
-        st.session_state.direction_idx = 0
-
     if st.button('Hentikan Simulasi'):
         st.session_state.stop_simulation = True
 
@@ -142,6 +156,20 @@ def main():
         traffic_light_simulation(predictions, rain_intensity)
         time.sleep(1)
         st.experimental_rerun()
+
+    st.title('Deteksi Kendaraan dan Pejalan Kaki')
+    uploaded_file = st.file_uploader("Unggah gambar", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        st.image(image, caption='Gambar yang diunggah', use_column_width=True)
+        
+        st.write("")
+        st.write("Mengklasifikasi gambar...")
+        
+        # Muat model
+        model_cnn = tf.keras.models.load_model('traffic_model.h5')
+        prediction = predict_image(image, model_cnn)
+        st.write(f"Prediksi: {prediction}")
 
 if __name__ == "__main__":
     main()
