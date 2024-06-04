@@ -4,4 +4,4 @@ scikit-learn
 matplotlib
 seaborn
 tensorflow
-pencv-python-headless
+opencv-python-headless
