@@ -5,10 +5,11 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import img_to_array
-from PIL import Image, ImageDraw
+from PIL import Image
 import numpy as np
+import cv2  # Menambahkan impor OpenCV
 import time
-import cv2
+import torch  # Menambahkan impor PyTorch untuk YOLOv5
 
 # Memuat dataset
 @st.cache_data
@@ -97,38 +98,19 @@ def traffic_light_simulation(predictions, rain_intensity):
 
 # Fungsi untuk preprocessing gambar
 def preprocess_image(image):
-    image = image.resize((416, 416))
+    image = image.resize((150, 150))
     image = img_to_array(image)
     image = np.expand_dims(image, axis=0)
     image = image / 255.0
     return image
 
-# Fungsi untuk deteksi objek
-def detect_objects(image, model, class_names, confidence_threshold=0.5):
-    # Preproses gambar
-    img = preprocess_image(image)
-    # Prediksi deteksi objek
-    detections = model.predict(img)
-    boxes, scores, classes, nums = detections[0], detections[1], detections[2], detections[3]
-    
-    results = []
-    for i in range(nums[0]):
-        if scores[0][i] >= confidence_threshold:
-            box = boxes[0][i]
-            class_id = int(classes[0][i])
-            class_name = class_names[class_id]
-            results.append((box, scores[0][i], class_name))
-    return results
-
-# Fungsi untuk menggambar kotak pada objek yang terdeteksi
-def draw_boxes(image, results):
-    draw = ImageDraw.Draw(image)
-    for box, score, class_name in results:
-        ymin, xmin, ymax, xmax = box
-        left, right, top, bottom = xmin * image.width, xmax * image.width, ymin * image.height, ymax * image.height
-        draw.rectangle(((left, top), (right, bottom)), outline="red", width=2)
-        draw.text((left, top), f"{class_name} {score:.2f}", fill="red")
-    return image
+# Fungsi untuk prediksi gambar
+def predict_image(image, model):
+    class_names = ['Mobil', 'Motor', 'Bis', 'Pejalan Kaki']
+    image = preprocess_image(image)
+    predictions = model.predict(image)
+    predicted_class = class_names[np.argmax(predictions)]
+    return predicted_class
 
 def main():
     st.title('Simulasi Lampu Lalu Lintas Perempatan dan Deteksi Objek')
@@ -186,17 +168,10 @@ def main():
         st.write("")
         st.write("Mengklasifikasi gambar...")
         
-        # Muat model YOLO
-        yolo_model = tf.saved_model.load("yolo_model_path")  # Ganti dengan path model YOLO Anda
-        class_names = ["Mobil", "Motor", "Bis", "Pejalan Kaki"]  # Sesuaikan dengan class names Anda
-        
-        # Deteksi objek
-        results = detect_objects(image, yolo_model, class_names)
-        st.write(f"Hasil Deteksi: {results}")
-        
-        # Gambar kotak di sekitar objek yang terdeteksi
-        image_with_boxes = draw_boxes(image, results)
-        st.image(image_with_boxes, caption='Hasil Deteksi', use_column_width=True)
+        # Muat model YOLOv5
+        yolo_model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+        results = yolo_model(image)
+        st.write(results.pandas().xyxy[0])  # Menampilkan hasil prediksi YOLO
 
 if __name__ == "__main__":
     main()
