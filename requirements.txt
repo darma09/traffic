@@ -8,3 +8,7 @@ ultralytics
 sklearn.ensemble
 sklearn.model_selection
 sklearn.metrics
+tensorflow.keras.applications
+tensorflow.keras.models
+tensorflow.keras.preprocessing.image
+joblib
