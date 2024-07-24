@@ -51,20 +51,20 @@ if uploaded_file is not None:
     pedestrian_count = 0
 
     # Count the occurrences of each object type
-    for result in results:
-        for obj in result.boxes:
-            cls = model.names[int(obj.cls)]
-            if cls == 'car':
-                car_count += 1
-            elif cls == 'motorcycle':
-                motorcycle_count += 1
-            elif cls == 'person':
-                pedestrian_count += 1
+    for box in results[0].boxes:
+        cls = results[0].names[int(box.cls)]
+        if cls == 'car':
+            car_count += 1
+        elif cls == 'motorcycle':
+            motorcycle_count += 1
+        elif cls == 'person':
+            pedestrian_count += 1
 
     # Display the results
     st.write(f"Cars: {car_count}")
     st.write(f"Motorcycles: {motorcycle_count}")
     st.write(f"Pedestrians: {pedestrian_count}")
 
-    # Display results
-    st.image(results[0].img, caption='Detected Image', use_column_width=True)
+    # Render and display the image with detections
+    annotated_image = results[0].plot()
+    st.image(annotated_image, caption='Detected Image', use_column_width=True)
