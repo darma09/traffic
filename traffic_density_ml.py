@@ -5,6 +5,7 @@ from PIL import Image
 import torch
 from pathlib import Path
 import os
+import cv2
 
 # Ensure OpenCV is installed correctly
 try:
@@ -68,6 +69,9 @@ if uploaded_files:
         # Preprocess the image
         processed_image = preprocess_image(img)
 
+        # Convert the image to the format expected by YOLOv5 (BGR format)
+        processed_image = cv2.cvtColor(processed_image, cv2.COLOR_RGB2BGR)
+
         # Perform object detection using YOLOv5
         results = model(processed_image, size=1280)  # Increase size for better accuracy
         df = results.pandas().xyxy[0]
@@ -106,7 +110,8 @@ if uploaded_files:
         st.write(f"Number of motorcycles: {num_motorcycles}")
         st.write(f"Number of people: {detected_people}")
 
-        # Convert image back to PIL format for displaying
+        # Convert image back to RGB for displaying
+        processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB)
         processed_image = Image.fromarray(processed_image)
         st.image(processed_image, caption='Processed Image with Bounding Boxes', use_column_width=True)
 
