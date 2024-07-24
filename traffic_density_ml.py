@@ -74,7 +74,7 @@ if uploaded_files:
         processed_image = preprocess_image(img)
 
         # Perform object detection using YOLOv5
-        results = model(processed_image, size=1280)  # Increase size for better accuracy
+        results = model(processed_image)  # Removed size argument
         df = results.pandas().xyxy[0]
 
         # Draw bounding boxes and labels on the image
