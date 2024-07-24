@@ -26,6 +26,16 @@ COLORS = {
     'person': (255, 0, 255)    # Magenta
 }
 
+# Function to check if a person is on a motorcycle
+def is_person_on_motorcycle(person_bbox, motorcycles):
+    for motorcycle_bbox in motorcycles:
+        if (motorcycle_bbox[0] <= person_bbox[0] <= motorcycle_bbox[2] and
+            motorcycle_bbox[1] <= person_bbox[1] <= motorcycle_bbox[3]) or \
+           (motorcycle_bbox[0] <= person_bbox[2] <= motorcycle_bbox[2] and
+            motorcycle_bbox[1] <= person_bbox[3] <= motorcycle_bbox[3]):
+            return True
+    return False
+
 # Streamlit app title
 st.title("Traffic Analysis and Image Upload")
 
@@ -49,19 +59,27 @@ if uploaded_files:
         results = model(processed_image)
         df = results.pandas().xyxy[0]
 
+        # Prepare lists to keep track of detected objects
+        person_bboxes = []
+        motorcycle_bboxes = []
+
         # Draw bounding boxes and labels on the image
-        detected_people = 0
         for _, row in df.iterrows():
             label = row['name']
             confidence = row['confidence'] * 100  # Convert to percentage
             if confidence < 50:  # Only consider detections with confidence above 50%
                 continue
             x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
+            if label == 'person':
+                person_bboxes.append((x1, y1, x2, y2))
+            elif label == 'motorcycle':
+                motorcycle_bboxes.append((x1, y1, x2, y2))
             color = COLORS.get(label, (255, 255, 255)) # Default to white if the class is not in COLORS
             cv2.rectangle(processed_image, (x1, y1), (x2, y2), color, 2)
             cv2.putText(processed_image, f'{label} {confidence:.0f}%', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-            if label == 'person' and not any(row['name'] == 'motorcycle' for _, row in df.iterrows() if x1 >= int(row['xmin']) and x2 <= int(row['xmax']) and y1 >= int(row['ymin']) and y2 <= int(row['ymax'])):
-                detected_people += 1
+
+        # Count people not on motorcycles
+        detected_people = sum(1 for person_bbox in person_bboxes if not is_person_on_motorcycle(person_bbox, motorcycle_bboxes))
 
         # Count vehicles
         vehicle_counts = df['name'].value_counts()
