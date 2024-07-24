@@ -9,3 +9,4 @@ opencv-python>=4.10.0.84
 yolov5
 numpy>=1.21.0
 pip
+libgl1
