@@ -8,3 +8,6 @@ ultralytics
 scikit-learn
 tensorflow
 joblib
+tensorflow.keras.applications
+tensorflow.keras.models
+tensorflow.keras.preprocessing.image
