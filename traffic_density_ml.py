@@ -20,6 +20,15 @@ def preprocess_image(image):
     image = np.array(image)
     return image
 
+# Colors for different classes
+COLORS = {
+    'car': (0, 255, 0),        # Green
+    'motorcycle': (0, 0, 255), # Red
+    'bus': (255, 0, 0),        # Blue
+    'truck': (255, 255, 0),    # Cyan
+    'person': (255, 0, 255)    # Magenta
+}
+
 # Streamlit app title
 st.title("Traffic Analysis and Image Upload")
 
@@ -48,8 +57,9 @@ if uploaded_files:
             label = row['name']
             confidence = row['confidence']
             x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-            cv2.rectangle(processed_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(processed_image, f'{label} {confidence:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            color = COLORS.get(label, (255, 255, 255)) # Default to white if the class is not in COLORS
+            cv2.rectangle(processed_image, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(processed_image, f'{label} {confidence:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
 
         # Count vehicles
         vehicle_counts = df['name'].value_counts()
