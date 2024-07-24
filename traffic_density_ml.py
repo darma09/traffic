@@ -7,8 +7,13 @@ from io import BytesIO
 import os
 
 # Load CSV data
-csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/traffics.csv'
-data = pd.read_csv(csv_url)
+csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
+try:
+    data = pd.read_csv(csv_url)
+    st.write("CSV data loaded successfully.")
+except Exception as e:
+    st.error(f"Error loading CSV data: {str(e)}")
+    raise e
 
 # Ensure the 'ultralytics' package is installed
 try:
