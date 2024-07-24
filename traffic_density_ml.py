@@ -21,14 +21,15 @@ except ImportError:
     os.system("pip install ultralytics")
     import ultralytics
 
-# Load the pre-trained YOLOv5 model from PyTorch Hub
+# Load the pre-trained YOLOv8 model from Ultralytics
 try:
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5x')  # Using a more accurate model
+    from ultralytics import YOLO
+    model = YOLO('yolov8x.pt')  # Using a more accurate model
 except Exception as e:
     st.error(f"Error loading the model: {str(e)}")
     raise e
 
-# Function to preprocess image for YOLOv5
+# Function to preprocess image for YOLOv8
 def preprocess_image(image):
     image = image.convert('RGB')
     image = np.array(image)
