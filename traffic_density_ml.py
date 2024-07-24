@@ -50,15 +50,18 @@ if uploaded_files:
         df = results.pandas().xyxy[0]
 
         # Draw bounding boxes and labels on the image
+        detected_people = 0
         for _, row in df.iterrows():
             label = row['name']
-            confidence = row['confidence']
-            if confidence < 0.5:  # Only consider detections with confidence above a threshold
+            confidence = row['confidence'] * 100  # Convert to percentage
+            if confidence < 50:  # Only consider detections with confidence above 50%
                 continue
             x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
             color = COLORS.get(label, (255, 255, 255)) # Default to white if the class is not in COLORS
             cv2.rectangle(processed_image, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(processed_image, f'{label} {confidence:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+            cv2.putText(processed_image, f'{label} {confidence:.0f}%', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+            if label == 'person' and not any(row['name'] == 'motorcycle' for _, row in df.iterrows() if x1 >= int(row['xmin']) and x2 <= int(row['xmax']) and y1 >= int(row['ymin']) and y2 <= int(row['ymax'])):
+                detected_people += 1
 
         # Count vehicles
         vehicle_counts = df['name'].value_counts()
@@ -66,6 +69,7 @@ if uploaded_files:
         num_motorcycles = vehicle_counts.get('motorcycle', 0)
         st.write(f"Number of cars: {num_cars}")
         st.write(f"Number of motorcycles: {num_motorcycles}")
+        st.write(f"Number of people: {detected_people}")
         
         # Convert image back to PIL format for displaying
         processed_image = Image.fromarray(processed_image)
