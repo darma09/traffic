@@ -68,7 +68,7 @@ def calculate_iou(box1, box2):
     inter_x_min = max(x1_min, x2_min)
     inter_y_min = max(y1_min, y2_min)
     inter_x_max = min(x1_max, x2_max)
-    inter_y_max = min(y1_max, y2_max)
+    inter_y_max = min(y1_max, y2_ymax)
     inter_area = max(0, inter_x_max - inter_x_min + 1) * max(0, inter_y_max - inter_y_min + 1)
 
     # Calculate union
