@@ -39,10 +39,6 @@ else:
 # Function to preprocess image for YOLOv5
 def preprocess_image(image):
     image = np.array(image)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    image = np.transpose(image, (2, 0, 1))  # Change shape to (C, H, W)
-    image = np.expand_dims(image, axis=0)  # Add batch dimension
-    image = torch.from_numpy(image).float()  # Convert to tensor
     return image
 
 # Colors for different classes
@@ -73,13 +69,14 @@ if uploaded_files:
         # Preprocess the image
         processed_image = preprocess_image(img)
 
+        # Convert the image to the format expected by YOLOv5 (BGR format)
+        processed_image = cv2.cvtColor(processed_image, cv2.COLOR_RGB2BGR)
+
         # Perform object detection using YOLOv5
-        results = model(processed_image)  # Removed size argument
+        results = model(processed_image, size=1280)  # Increase size for better accuracy
         df = results.pandas().xyxy[0]
 
         # Draw bounding boxes and labels on the image
-        processed_image = processed_image.squeeze().permute(1, 2, 0).numpy()  # Convert back to original shape
-        processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB)
         detected_people = 0
         motorcycles = []
 
@@ -113,7 +110,8 @@ if uploaded_files:
         st.write(f"Number of motorcycles: {num_motorcycles}")
         st.write(f"Number of people: {detected_people}")
 
-        # Convert image back to PIL format for displaying
+        # Convert image back to RGB for displaying
+        processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB)
         processed_image = Image.fromarray(processed_image)
         st.image(processed_image, caption='Processed Image with Bounding Boxes', use_column_width=True)
 
