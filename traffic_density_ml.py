@@ -5,6 +5,11 @@ import numpy as np
 import os
 from ultralytics import YOLO
 import cv2
+from sklearn.ensemble import RandomForestClassifier
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.models import Model
+from tensorflow.keras.preprocessing.image import img_to_array
+import joblib
 
 # Load CSV data
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
@@ -34,6 +39,25 @@ def preprocess_image(image):
     image = image.convert('RGB')
     image = np.array(image)
     return image
+
+# Load pre-trained VGG16 model + higher level layers
+base_model = VGG16(weights='imagenet')
+model_cnn = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
+
+def extract_features(image):
+    image = cv2.resize(image, (224, 224))
+    image = img_to_array(image)
+    image = np.expand_dims(image, axis=0)
+    image = image / 255.0
+    features = model_cnn.predict(image)
+    return features.flatten()
+
+# Load the pre-trained Random Forest model
+random_forest_model = joblib.load('random_forest_model.pkl')
+
+# Example function to classify objects using Random Forest
+def classify_object(features):
+    return random_forest_model.predict([features])[0]
 
 # Function to calculate IoU (Intersection over Union) between two bounding boxes
 def calculate_iou(box1, box2):
@@ -79,12 +103,20 @@ if uploaded_file is not None:
         cls = results[0].names[int(box.cls)]
         bbox = box.xyxy[0].cpu().numpy()
         confidence = box.conf.item() * 100  # Get confidence as a percentage
-        if cls == 'car':
+
+        # Extract features using CNN
+        cropped_img = processed_image[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+        features = extract_features(cropped_img)
+
+        # Classify object using Random Forest
+        rf_cls = classify_object(features)
+
+        if rf_cls == 'car':
             car_count += 1
-        elif cls == 'motorcycle':
+        elif rf_cls == 'motorcycle':
             motorcycle_count += 1
             motorcycle_boxes.append(bbox)
-        elif cls == 'person':
+        elif rf_cls == 'person':
             person_boxes.append(bbox)
 
     # Count pedestrians not on motorcycles
