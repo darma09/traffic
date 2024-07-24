@@ -6,6 +6,10 @@ import streamlit as st
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from tensorflow.keras.models import load_model
+
+# Load the pre-trained CNN model
+model = load_model('traffic_cnn_model.h5')
 
 def load_images_from_folder(folder):
     images = []
@@ -22,6 +26,18 @@ def preprocess_images(images):
         resized = cv2.resize(gray, (64, 64))
         processed_images.append(resized.flatten())
     return np.array(processed_images)
+
+def preprocess_image_for_cnn(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, (150, 150))
+    img = img / 255.0
+    img = np.expand_dims(img, axis=0)
+    return img
+
+def predict_cars(img):
+    preprocessed_img = preprocess_image_for_cnn(img)
+    prediction = model.predict(preprocessed_img)
+    return int(prediction[0] > 0.5)
 
 def main():
     st.title("Traffic Density Analysis")
@@ -57,6 +73,19 @@ def main():
             st.error(f"Images folder not found: {folder}")
         except Exception as e:
             st.error(f"An error occurred while loading images: {e}")
+
+    st.title("Vehicle Recognition App")
+    st.write("Upload an image to identify and count cars.")
+
+    uploaded_file = st.file_uploader("Choose an image...", type="jpg")
+    if uploaded_file is not None:
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        img = cv2.imdecode(file_bytes, 1)
+
+        st.image(img, channels="BGR", caption="Uploaded Image", use_column_width=True)
+
+        num_cars = predict_cars(img)
+        st.write(f"Number of cars in the image: {num_cars}")
 
 if __name__ == "__main__":
     main()
