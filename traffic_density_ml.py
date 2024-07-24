@@ -70,7 +70,3 @@ st.write(data.describe())
 # Show some plots based on CSV data
 st.subheader("Traffic Volume Over Time")
 st.line_chart(data['traffic_volume'])
-
-# Run the app
-if __name__ == '__main__':
-    st.run()
