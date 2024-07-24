@@ -34,6 +34,12 @@ def preprocess_image(image):
     image = np.array(image)
     return image
 
+# Function to check for overlap between two bounding boxes
+def is_overlapping(box1, box2):
+    x1_min, y1_min, x1_max, y1_max = box1
+    x2_min, y2_min, x2_max, y2_max = box2
+    return not (x1_max < x2_min or x1_min > x2_max or y1_max < y2_min or y1_min > y2_max)
+
 # Upload image
 uploaded_file = st.file_uploader("Choose an image...", type="jpg")
 if uploaded_file is not None:
@@ -45,19 +51,32 @@ if uploaded_file is not None:
     processed_image = preprocess_image(image)
     results = model(processed_image)
 
-    # Initialize counters
+    # Initialize counters and bounding boxes
     car_count = 0
     motorcycle_count = 0
     pedestrian_count = 0
+    person_boxes = []
+    motorcycle_boxes = []
 
-    # Count the occurrences of each object type
+    # Collect bounding boxes
     for box in results[0].boxes:
         cls = results[0].names[int(box.cls)]
         if cls == 'car':
             car_count += 1
         elif cls == 'motorcycle':
             motorcycle_count += 1
+            motorcycle_boxes.append(box.xyxy)
         elif cls == 'person':
+            person_boxes.append(box.xyxy)
+
+    # Count pedestrians not on motorcycles
+    for person_box in person_boxes:
+        on_motorcycle = False
+        for motorcycle_box in motorcycle_boxes:
+            if is_overlapping(person_box, motorcycle_box):
+                on_motorcycle = True
+                break
+        if not on_motorcycle:
             pedestrian_count += 1
 
     # Display the results
