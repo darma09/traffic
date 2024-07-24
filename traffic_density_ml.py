@@ -27,6 +27,24 @@ except ImportError:
     os.system("pip install ultralytics")
     import ultralytics
 
+# Ensure sklearn is installed
+try:
+    from sklearn.ensemble import RandomForestClassifier
+except ImportError:
+    os.system("pip install scikit-learn")
+    from sklearn.ensemble import RandomForestClassifier
+
+# Ensure tensorflow is installed
+try:
+    from tensorflow.keras.applications import VGG16
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.preprocessing.image import img_to_array
+except ImportError:
+    os.system("pip install tensorflow")
+    from tensorflow.keras.applications import VGG16
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.preprocessing.image import img_to_array
+
 # Load the pre-trained YOLOv8 model
 try:
     model = YOLO('yolov8x.pt')  # Using the more accurate model
@@ -105,7 +123,7 @@ if uploaded_file is not None:
         confidence = box.conf.item() * 100  # Get confidence as a percentage
 
         # Extract features using CNN
-        cropped_img = processed_image[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+        cropped_img = processed_image[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
         features = extract_features(cropped_img)
 
         # Classify object using Random Forest
