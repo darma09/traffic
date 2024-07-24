@@ -1,9 +1,9 @@
 import streamlit as st
-import torch
 import pandas as pd
 from PIL import Image
 import numpy as np
 import os
+from ultralytics import YOLO
 
 # Load CSV data
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
@@ -21,10 +21,9 @@ except ImportError:
     os.system("pip install ultralytics")
     import ultralytics
 
-# Load the pre-trained YOLOv8 model from Ultralytics
+# Load the pre-trained YOLOv8 model
 try:
-    from ultralytics import YOLO
-    model = YOLO('yolov8x.pt')  # Using a more accurate model
+    model = YOLO('yolov8x.pt')  # Using the more accurate model
 except Exception as e:
     st.error(f"Error loading the model: {str(e)}")
     raise e
