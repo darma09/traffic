@@ -33,7 +33,7 @@ except Exception as e:
 def preprocess_image(image):
     image = image.convert('RGB')
     image = image.resize((640, 640))  # Resize image to 640x640 pixels
-    image = torch.tensor(image).unsqueeze(0).permute(0, 3, 1, 2) / 255.0  # Normalize image
+    image = torch.tensor(np.array(image)).unsqueeze(0).permute(0, 3, 1, 2).float() / 255.0  # Normalize image
     return image
 
 # Upload image
@@ -50,9 +50,24 @@ if uploaded_file is not None:
     # Convert results to pandas dataframe
     df = results.pandas().xyxy[0]
 
-    # Draw bounding boxes and labels on image
+    # Initialize counters
+    car_count = 0
+    motorcycle_count = 0
+    pedestrian_count = 0
+
+    # Count the occurrences of each object type
     for _, row in df.iterrows():
-        st.write(f"{row['name']}: {row['confidence']*100:.2f}%")
+        if row['name'] == 'car':
+            car_count += 1
+        elif row['name'] == 'motorcycle':
+            motorcycle_count += 1
+        elif row['name'] == 'person':
+            pedestrian_count += 1
+
+    # Display the results
+    st.write(f"Cars: {car_count}")
+    st.write(f"Motorcycles: {motorcycle_count}")
+    st.write(f"Pedestrians: {pedestrian_count}")
 
     # Display results
     st.image(results.render(), caption='Detected Image', use_column_width=True)
