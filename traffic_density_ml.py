@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 import torch
+from pathlib import Path
 
 # Ensure OpenCV is installed correctly
 try:
@@ -15,8 +16,12 @@ except ImportError as e:
 csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
 data = pd.read_csv(csv_url)
 
-# Load the pre-trained YOLOv5 model from PyTorch Hub
-model = torch.hub.load('ultralytics/yolov5', 'yolov5x')  # Using a more advanced model for better accuracy
+# Load the YOLOv5 model locally
+model_path = Path("yolov5x.pt")
+if not model_path.exists():
+    st.error("Model file yolov5x.pt not found. Please download it from the YOLOv5 repository and place it in the project directory.")
+else:
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
 
 # Function to preprocess image for YOLOv5
 def preprocess_image(image):
