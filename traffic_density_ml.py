@@ -2,8 +2,7 @@ import streamlit as st
 import torch
 import pandas as pd
 from PIL import Image
-import requests
-from io import BytesIO
+import numpy as np
 import os
 
 # Load CSV data
@@ -32,8 +31,7 @@ except Exception as e:
 # Function to preprocess image for YOLOv5
 def preprocess_image(image):
     image = image.convert('RGB')
-    image = image.resize((640, 640))  # Resize image to 640x640 pixels
-    image = torch.tensor(np.array(image)).unsqueeze(0).permute(0, 3, 1, 2).float() / 255.0  # Normalize image
+    image = np.array(image)
     return image
 
 # Upload image
