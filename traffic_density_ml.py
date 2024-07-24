@@ -61,13 +61,14 @@ if uploaded_file is not None:
     # Collect bounding boxes
     for box in results[0].boxes:
         cls = results[0].names[int(box.cls)]
+        bbox = box.xyxy[0].cpu().numpy()
         if cls == 'car':
             car_count += 1
         elif cls == 'motorcycle':
             motorcycle_count += 1
-            motorcycle_boxes.append(box.xyxy)
+            motorcycle_boxes.append(bbox)
         elif cls == 'person':
-            person_boxes.append(box.xyxy)
+            person_boxes.append(bbox)
 
     # Count pedestrians not on motorcycles
     for person_box in person_boxes:
