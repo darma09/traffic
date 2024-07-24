@@ -92,7 +92,7 @@ if uploaded_file is not None:
         on_motorcycle = False
         for motorcycle_box in motorcycle_boxes:
             iou = calculate_iou(person_box, motorcycle_box)
-            if iou > 0.5:  # Consider as on motorcycle if IoU > 0.5
+            if iou > 0.3:  # Adjusted IoU threshold to better filter pedestrians on motorcycles
                 on_motorcycle = True
                 break
         if not on_motorcycle:
