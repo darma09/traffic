@@ -68,7 +68,7 @@ def calculate_iou(box1, box2):
     inter_x_min = max(x1_min, x2_min)
     inter_y_min = max(y1_min, y2_min)
     inter_x_max = min(x1_max, x2_max)
-    inter_y_max = min(y1_max, y2_ymax)
+    inter_y_max = min(y1_max, y2_max)
     inter_area = max(0, inter_x_max - inter_x_min + 1) * max(0, inter_y_max - inter_y_min + 1)
 
     # Calculate union
@@ -105,7 +105,7 @@ if uploaded_file is not None:
         confidence = box.conf.item() * 100  # Get confidence as a percentage
 
         # Extract features using CNN
-        cropped_img = processed_image[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+        cropped_img = processed_image[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
         features = extract_features(cropped_img)
 
         # Classify object using Random Forest
