@@ -5,6 +5,12 @@ from PIL import Image
 import cv2
 import torch
 
+# Check if OpenCV is installed correctly
+try:
+    import cv2
+except ImportError:
+    st.error("OpenCV is not installed. Please install it using 'pip install opencv-python-headless'")
+
 # Load CSV data from GitHub
 csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
 data = pd.read_csv(csv_url)
