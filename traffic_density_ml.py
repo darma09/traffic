@@ -1,105 +1,63 @@
-import os
-import cv2
-import numpy as np
-import pandas as pd
 import streamlit as st
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+import pandas as pd
+import numpy as np
+from PIL import Image
+import requests
+from io import BytesIO
+import os
+import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-def load_images_from_folder(folder):
-    images = []
-    for filename in os.listdir(folder):
-        img = cv2.imread(os.path.join(folder, filename))
-        if img is not None:
-            images.append(img)
-    return images
+# Load CSV data from GitHub
+csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
+data = pd.read_csv(csv_url)
 
-def preprocess_images(images):
-    processed_images = []
-    for img in images:
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        resized = cv2.resize(gray, (64, 64))
-        processed_images.append(resized.flatten())
-    return np.array(processed_images)
+# Load the pre-trained CNN model
+model_path = "traffic_cnn_model.h5"
+model = load_model(model_path)
 
-def preprocess_image_for_cnn(img):
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (150, 150))
-    img = img / 255.0
-    img = np.expand_dims(img, axis=0)
-    return img
+# Function to preprocess image
+def preprocess_image(image):
+    image = image.resize((128, 128))
+    image = np.array(image)
+    if image.shape[2] == 4:
+        image = image[..., :3]
+    image = image / 255.0
+    image = np.expand_dims(image, axis=0)
+    return image
 
-def predict_cars(model, img):
-    preprocessed_img = preprocess_image_for_cnn(img)
-    prediction = model.predict(preprocessed_img)
-    return int(prediction[0] > 0.5)
+# Streamlit app title
+st.title("Traffic Analysis and Image Upload")
 
-def analyze_vehicle_data(file_path):
-    data = pd.read_csv(file_path)
-    # Perform analysis (e.g., summarize vehicle counts, patterns)
-    summary = data.describe()  # Example summary, customize as needed
-    return summary
+# Display the CSV data
+st.subheader("Traffic Data")
+st.write(data.head())
 
-def main():
-    st.title("Traffic Density Analysis")
+# Image upload functionality
+st.subheader("Upload Traffic Images")
+uploaded_files = st.file_uploader("Choose images", accept_multiple_files=True, type=['jpg', 'png', 'jpeg'])
 
-    # Image Folder Processing
-    folder = st.text_input('Enter the path to the images folder:', 'path_to_images_folder')
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        img = Image.open(uploaded_file)
+        st.image(img, caption='Uploaded Image', use_column_width=True)
 
-    if st.button('Load and Process Images'):
-        try:
-            images = load_images_from_folder(folder)
-            if not images:
-                st.error(f"No images found in folder: {folder}")
-                return
-            X = preprocess_images(images)
-            st.success(f"Processed {len(images)} images successfully.")
-        except FileNotFoundError:
-            st.error(f"Images folder not found: {folder}")
-        except Exception as e:
-            st.error(f"An error occurred while loading images: {e}")
+        # Preprocess the image
+        processed_image = preprocess_image(img)
+        
+        # Perform image analysis using the CNN model
+        prediction = model.predict(processed_image)
+        st.write(f"Prediction: {np.argmax(prediction)}")
 
-    # CSV Data Upload
-    st.title("Vehicle Data Analysis")
-    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-    if uploaded_file is not None:
-        try:
-            summary = analyze_vehicle_data(uploaded_file)
-            st.write("Vehicle Data Summary:")
-            st.write(summary)
-        except FileNotFoundError:
-            st.error("CSV file not found")
-        except Exception as e:
-            st.error(f"An error occurred while processing the CSV file: {e}")
+# Basic data analysis
+st.subheader("Basic Data Analysis")
+st.write("Descriptive Statistics of Traffic Volume")
+st.write(data.describe())
 
-    # Vehicle Recognition App
-    st.title("Vehicle Recognition App")
-    st.write("Upload an image to identify and count cars.")
+# Show some plots based on CSV data
+st.subheader("Traffic Volume Over Time")
+st.line_chart(data['traffic_volume'])
 
-    model_path = st.text_input('Enter the path to the model file:', 'traffic_cnn_model.h5')
-
-    if st.button('Load Model'):
-        try:
-            model = load_model(model_path)
-            st.session_state['model'] = model  # Simpan model ke session state
-            st.success(f"Model loaded successfully from {model_path}")
-        except Exception as e:
-            st.error(f"An error occurred while loading the model: {e}")
-
-    uploaded_file = st.file_uploader("Choose an image...", type="jpg")
-    if uploaded_file is not None:
-        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-        img = cv2.imdecode(file_bytes, 1)
-
-        st.image(img, channels="BGR", caption="Uploaded Image", use_column_width=True)
-
-        if 'model' in st.session_state:
-            num_cars = predict_cars(st.session_state['model'], img)
-            st.write(f"Number of cars in the image: {num_cars}")
-        else:
-            st.error("Please load the model first.")
-
-if __name__ == "__main__":
-    main()
+# Run the app
+if __name__ == '__main__':
+    st.run()
