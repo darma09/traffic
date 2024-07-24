@@ -99,13 +99,13 @@ if uploaded_file is not None:
     motorcycle_boxes = []
 
     # Collect bounding boxes and their confidences
-    for box in results[0].boxes:
-        cls = results[0].names[int(box.cls)]
+    for box in results.boxes:
+        cls = results.names[int(box.cls)]
         bbox = box.xyxy[0].cpu().numpy()
         confidence = box.conf.item() * 100  # Get confidence as a percentage
 
         # Extract features using CNN
-        cropped_img = processed_image[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
+        cropped_img = processed_image[bbox[1]:bbox[3], bbox[0]:bbox[2]]
         features = extract_features(cropped_img)
 
         # Classify object using Random Forest
@@ -137,8 +137,8 @@ if uploaded_file is not None:
 
     # Draw bounding boxes and confidences on the image
     annotated_image = processed_image.copy()
-    for box in results[0].boxes:
-        cls = results[0].names[int(box.cls)]
+    for box in results.boxes:
+        cls = results.names[int(box.cls)]
         bbox = box.xyxy[0].cpu().numpy().astype(int)
         confidence = box.conf.item() * 100  # Get confidence as a percentage
         label = f"{cls.capitalize()}: {confidence:.2f}%"
