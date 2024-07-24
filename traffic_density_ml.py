@@ -1,125 +1,53 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-from PIL import Image
 import torch
-from pathlib import Path
+import pandas as pd
+from PIL import Image
+import requests
+from io import BytesIO
 import os
-import cv2
 
-# Ensure OpenCV is installed correctly
-try:
-    import cv2
-except ImportError as e:
-    st.error("OpenCV is not installed. Please install it using 'pip install opencv-python-headless'")
-    raise e
-
-# Load CSV data from GitHub
-csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
+# Load CSV data
+csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/traffics.csv'
 data = pd.read_csv(csv_url)
 
-# Ensure ultralytics is installed correctly
+# Ensure the 'ultralytics' package is installed
 try:
     import ultralytics
-except ImportError as e:
-    st.error("Ultralytics is not installed. Please install it using 'pip install ultralytics'")
-    raise e
+except ImportError:
+    os.system("pip install ultralytics")
+    import ultralytics
 
-# Load the YOLOv5n-seg model locally
-model_path = Path("yolov5n-seg.pt")
-if not model_path.exists():
-    st.error("Model file yolov5n-seg.pt not found. Please download it from the YOLOv5 repository and place it in the project directory.")
-else:
-    try:
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
-    except Exception as e:
-        st.error(f"Error loading the model: {str(e)}")
-        raise e
+# Load the pre-trained YOLOv5 model from PyTorch Hub
+try:
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5x')  # Using a more accurate model
+except Exception as e:
+    st.error(f"Error loading the model: {str(e)}")
+    raise e
 
 # Function to preprocess image for YOLOv5
 def preprocess_image(image):
-    image = np.array(image)
+    image = image.convert('RGB')
+    image = image.resize((640, 640))  # Resize image to 640x640 pixels
+    image = torch.tensor(image).unsqueeze(0).permute(0, 3, 1, 2) / 255.0  # Normalize image
     return image
 
-# Colors for different classes
-COLORS = {
-    'car': (0, 255, 0),          # Green
-    'motorcycle': (0, 0, 255),   # Red
-    'bus': (255, 0, 0),          # Blue
-    'truck': (255, 255, 0),      # Cyan
-    'person': (255, 0, 255),     # Magenta
-}
+# Upload image
+uploaded_file = st.file_uploader("Choose an image...", type="jpg")
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption='Uploaded Image', use_column_width=True)
+    st.write("")
 
-# Streamlit app title
-st.title("Traffic Analysis and Image Upload")
+    # Preprocess and make predictions
+    processed_image = preprocess_image(image)
+    results = model(processed_image)
 
-# Display the CSV data
-st.subheader("Traffic Data")
-st.write(data.head())
+    # Convert results to pandas dataframe
+    df = results.pandas().xyxy[0]
 
-# Image upload functionality
-st.subheader("Upload Traffic Images")
-uploaded_files = st.file_uploader("Choose images", accept_multiple_files=True, type=['jpg', 'png', 'jpeg'])
+    # Draw bounding boxes and labels on image
+    for _, row in df.iterrows():
+        st.write(f"{row['name']}: {row['confidence']*100:.2f}%")
 
-if uploaded_files:
-    for uploaded_file in uploaded_files:
-        img = Image.open(uploaded_file)
-        st.image(img, caption='Uploaded Image', use_column_width=True)
-
-        # Preprocess the image
-        processed_image = preprocess_image(img)
-
-        # Convert the image to the format expected by YOLOv5 (BGR format)
-        processed_image = cv2.cvtColor(processed_image, cv2.COLOR_RGB2BGR)
-
-        # Perform object detection using YOLOv5
-        results = model(processed_image, size=1280)  # Increase size for better accuracy
-        df = results.pandas().xyxy[0]
-
-        # Draw bounding boxes and labels on the image
-        detected_people = 0
-        motorcycles = []
-
-        for _, row in df.iterrows():
-            if row['name'] == 'motorcycle':
-                motorcycles.append((row['xmin'], row['ymin'], row['xmax'], row['ymax']))
-            label = row['name']
-            confidence = row['confidence'] * 100  # Convert to percentage
-            if confidence < 50:  # Only consider detections with confidence above 50%
-                continue
-            x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-            color = COLORS.get(label, (255, 255, 255))  # Default to white if the class is not in COLORS
-            cv2.rectangle(processed_image, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(processed_image, f'{label} {confidence:.0f}%', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-
-            if label == 'person':
-                # Check if the person is on a motorcycle
-                on_motorcycle = False
-                for mx1, my1, mx2, my2 in motorcycles:
-                    if (mx1 <= (x1 + x2) / 2 <= mx2) and (my1 <= (y1 + y2) / 2 <= my2):
-                        on_motorcycle = True
-                        break
-                if not on_motorcycle:
-                    detected_people += 1
-
-        # Count vehicles
-        vehicle_counts = df['name'].value_counts()
-        num_cars = vehicle_counts.get('car', 0)
-        num_motorcycles = vehicle_counts.get('motorcycle', 0)
-        st.write(f"Number of cars: {num_cars}")
-        st.write(f"Number of motorcycles: {num_motorcycles}")
-        st.write(f"Number of people: {detected_people}")
-
-        # Convert image back to RGB for displaying
-        processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB)
-        processed_image = Image.fromarray(processed_image)
-        st.image(processed_image, caption='Processed Image with Bounding Boxes', use_column_width=True)
-
-# Basic data analysis
-st.subheader("Basic Data Analysis")
-st.write("Descriptive Statistics of Traffic Volume")
-st.write(data.describe())
-
-# Show some plots based on CSV data
-st.subheader("Traffic Volume Over Time")
-st.line_chart(data['traffic_volume'])
+    # Display results
+    st.image(results.render(), caption='Detected Image', use_column_width=True)
