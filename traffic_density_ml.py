@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 import torch
 from pathlib import Path
+import os
 
 # Ensure OpenCV is installed correctly
 try:
@@ -15,6 +16,13 @@ except ImportError as e:
 # Load CSV data from GitHub
 csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
 data = pd.read_csv(csv_url)
+
+# Ensure ultralytics is installed correctly
+try:
+    import ultralytics
+except ImportError as e:
+    st.error("Ultralytics is not installed. Please install it using 'pip install ultralytics'")
+    raise e
 
 # Load the YOLOv5n-seg model locally
 model_path = Path("yolov5n-seg.pt")
