@@ -2,11 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from PIL import Image
-import requests
-from io import BytesIO
-import os
-import torch
 import cv2
+import torch
 
 # Load CSV data from GitHub
 csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
@@ -56,6 +53,8 @@ if uploaded_files:
         for _, row in df.iterrows():
             label = row['name']
             confidence = row['confidence']
+            if confidence < 0.5:  # Only consider detections with confidence above a threshold
+                continue
             x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
             color = COLORS.get(label, (255, 255, 255)) # Default to white if the class is not in COLORS
             cv2.rectangle(processed_image, (x1, y1), (x2, y2), color, 2)
