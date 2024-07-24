@@ -85,7 +85,6 @@ def main():
             st.success(f"Model loaded successfully from {model_path}")
         except Exception as e:
             st.error(f"An error occurred while loading the model: {e}")
-            return
 
     uploaded_file = st.file_uploader("Choose an image...", type="jpg")
     if uploaded_file is not None:
