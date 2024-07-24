@@ -35,25 +35,26 @@ def preprocess_image(image):
     image = np.array(image)
     return image
 
-# Function to check for overlap between two bounding boxes with tighter criteria
-def is_overlapping(box1, box2, threshold=0.5):
+# Function to calculate IoU (Intersection over Union) between two bounding boxes
+def calculate_iou(box1, box2):
     x1_min, y1_min, x1_max, y1_max = box1
     x2_min, y2_min, x2_max, y2_max = box2
-    
-    # Calculate the overlap area
-    x_overlap = max(0, min(x1_max, x2_max) - max(x1_min, x2_min))
-    y_overlap = max(0, min(y1_max, y2_max) - max(y1_min, y2_min))
-    overlap_area = x_overlap * y_overlap
 
-    # Calculate the area of each box
-    box1_area = (x1_max - x1_min) * (y1_max - y1_min)
-    box2_area = (x2_max - x2_min) * (y2_max - y2_min)
-    
-    # Calculate the ratio of overlap to the smallest box area
-    smallest_area = min(box1_area, box2_area)
-    overlap_ratio = overlap_area / smallest_area
+    # Calculate intersection
+    inter_x_min = max(x1_min, x2_min)
+    inter_y_min = max(y1_min, y2_min)
+    inter_x_max = min(x1_max, x2_max)
+    inter_y_max = min(y1_max, y2_max)
+    inter_area = max(0, inter_x_max - inter_x_min + 1) * max(0, inter_y_max - inter_y_min + 1)
 
-    return overlap_ratio > threshold
+    # Calculate union
+    box1_area = (x1_max - x1_min + 1) * (y1_max - y1_min + 1)
+    box2_area = (x2_max - x2_min + 1) * (y2_max - y2_min + 1)
+    union_area = box1_area + box2_area - inter_area
+
+    # Calculate IoU
+    iou = inter_area / union_area
+    return iou
 
 # Upload image
 uploaded_file = st.file_uploader("Choose an image...", type="jpg")
@@ -77,6 +78,7 @@ if uploaded_file is not None:
     for box in results[0].boxes:
         cls = results[0].names[int(box.cls)]
         bbox = box.xyxy[0].cpu().numpy()
+        confidence = box.conf.item() * 100  # Get confidence as a percentage
         if cls == 'car':
             car_count += 1
         elif cls == 'motorcycle':
@@ -89,7 +91,8 @@ if uploaded_file is not None:
     for person_box in person_boxes:
         on_motorcycle = False
         for motorcycle_box in motorcycle_boxes:
-            if is_overlapping(person_box, motorcycle_box, threshold=0.5):
+            iou = calculate_iou(person_box, motorcycle_box)
+            if iou > 0.5:  # Consider as on motorcycle if IoU > 0.5
                 on_motorcycle = True
                 break
         if not on_motorcycle:
