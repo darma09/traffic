@@ -18,9 +18,9 @@ csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Intersta
 data = pd.read_csv(csv_url)
 
 # Load the YOLOv5 model locally
-model_path = Path("yolov5x.pt")
+model_path = Path("yolov5n.pt")
 if not model_path.exists():
-    st.error("Model file yolov5x.pt not found. Please download it from the YOLOv5 repository and place it in the project directory.")
+    st.error("Model file yolov5n.pt not found. Please download it from the YOLOv5 repository and place it in the project directory.")
 else:
     model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
 
