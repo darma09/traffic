@@ -82,6 +82,7 @@ def main():
     if st.button('Load Model'):
         try:
             model = load_model(model_path)
+            st.session_state['model'] = model  # Simpan model ke session state
             st.success(f"Model loaded successfully from {model_path}")
         except Exception as e:
             st.error(f"An error occurred while loading the model: {e}")
@@ -93,8 +94,8 @@ def main():
 
         st.image(img, channels="BGR", caption="Uploaded Image", use_column_width=True)
 
-        if 'model' in locals():
-            num_cars = predict_cars(model, img)
+        if 'model' in st.session_state:
+            num_cars = predict_cars(st.session_state['model'], img)  # Gunakan model dari session state
             st.write(f"Number of cars in the image: {num_cars}")
         else:
             st.error("Please load the model first.")
