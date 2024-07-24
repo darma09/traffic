@@ -5,7 +5,7 @@ matplotlib
 seaborn
 tensorflow
 opencv-python-headless
-opencv-python>=4.5.3.56
+opencv-python>=4.10.0.84
 yolov5
 numpy>=1.21.0
 pip
