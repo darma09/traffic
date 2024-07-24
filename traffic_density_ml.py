@@ -45,22 +45,21 @@ if uploaded_file is not None:
     processed_image = preprocess_image(image)
     results = model(processed_image)
 
-    # Convert results to pandas dataframe
-    df = results.pandas().xyxy[0]
-
     # Initialize counters
     car_count = 0
     motorcycle_count = 0
     pedestrian_count = 0
 
     # Count the occurrences of each object type
-    for _, row in df.iterrows():
-        if row['name'] == 'car':
-            car_count += 1
-        elif row['name'] == 'motorcycle':
-            motorcycle_count += 1
-        elif row['name'] == 'person':
-            pedestrian_count += 1
+    for result in results:
+        for obj in result.boxes:
+            cls = model.names[int(obj.cls)]
+            if cls == 'car':
+                car_count += 1
+            elif cls == 'motorcycle':
+                motorcycle_count += 1
+            elif cls == 'person':
+                pedestrian_count += 1
 
     # Display the results
     st.write(f"Cars: {car_count}")
@@ -68,4 +67,4 @@ if uploaded_file is not None:
     st.write(f"Pedestrians: {pedestrian_count}")
 
     # Display results
-    st.image(results.render(), caption='Detected Image', use_column_width=True)
+    st.image(results[0].img, caption='Detected Image', use_column_width=True)
