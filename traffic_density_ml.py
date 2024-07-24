@@ -2,14 +2,14 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from PIL import Image
-import cv2
 import torch
 
-# Check if OpenCV is installed correctly
+# Ensure OpenCV is installed correctly
 try:
     import cv2
-except ImportError:
+except ImportError as e:
     st.error("OpenCV is not installed. Please install it using 'pip install opencv-python-headless'")
+    raise e
 
 # Load CSV data from GitHub
 csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
