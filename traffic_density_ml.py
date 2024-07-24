@@ -58,10 +58,11 @@ if uploaded_file is not None:
     person_boxes = []
     motorcycle_boxes = []
 
-    # Collect bounding boxes
+    # Collect bounding boxes and their confidences
     for box in results[0].boxes:
         cls = results[0].names[int(box.cls)]
         bbox = box.xyxy[0].cpu().numpy()
+        confidence = box.conf.item() * 100  # Get confidence as a percentage
         if cls == 'car':
             car_count += 1
         elif cls == 'motorcycle':
@@ -84,6 +85,12 @@ if uploaded_file is not None:
     st.write(f"Cars: {car_count}")
     st.write(f"Motorcycles: {motorcycle_count}")
     st.write(f"Pedestrians: {pedestrian_count}")
+
+    # Display accuracies
+    for box in results[0].boxes:
+        cls = results[0].names[int(box.cls)]
+        confidence = box.conf.item() * 100  # Get confidence as a percentage
+        st.write(f"{cls.capitalize()}: {confidence:.2f}%")
 
     # Render and display the image with detections
     annotated_image = results[0].plot()
