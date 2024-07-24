@@ -4,7 +4,6 @@ import numpy as np
 from PIL import Image
 import torch
 from pathlib import Path
-import os
 
 # Ensure OpenCV is installed correctly
 try:
@@ -17,10 +16,10 @@ except ImportError as e:
 csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
 data = pd.read_csv(csv_url)
 
-# Load the YOLOv5 model locally
-model_path = Path("yolov5n.pt")
+# Load the YOLOv5n-seg model locally
+model_path = Path("yolov5n-seg.pt")
 if not model_path.exists():
-    st.error("Model file yolov5n.pt not found. Please download it from the YOLOv5 repository and place it in the project directory.")
+    st.error("Model file yolov5n-seg.pt not found. Please download it from the YOLOv5 repository and place it in the project directory.")
 else:
     model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
 
