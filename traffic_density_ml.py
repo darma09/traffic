@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 import os
 from ultralytics import YOLO
+import cv2
 
 # Load CSV data
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
@@ -86,12 +87,23 @@ if uploaded_file is not None:
     st.write(f"Motorcycles: {motorcycle_count}")
     st.write(f"Pedestrians: {pedestrian_count}")
 
-    # Display accuracies
+    # Draw bounding boxes and confidences on the image
+    annotated_image = processed_image.copy()
     for box in results[0].boxes:
         cls = results[0].names[int(box.cls)]
+        bbox = box.xyxy[0].cpu().numpy().astype(int)
         confidence = box.conf.item() * 100  # Get confidence as a percentage
-        st.write(f"{cls.capitalize()}: {confidence:.2f}%")
+        label = f"{cls.capitalize()}: {confidence:.2f}%"
+        
+        # Draw bounding box
+        color = (0, 255, 0) if cls == 'person' else (255, 0, 0) if cls == 'motorcycle' else (0, 0, 255)
+        cv2.rectangle(annotated_image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color, 2)
+        
+        # Draw label
+        label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+        label_ymin = max(bbox[1], label_size[1] + 10)
+        cv2.rectangle(annotated_image, (bbox[0], label_ymin - label_size[1] - 10), (bbox[0] + label_size[0], label_ymin + 5), color, cv2.FILLED)
+        cv2.putText(annotated_image, label, (bbox[0], label_ymin - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
-    # Render and display the image with detections
-    annotated_image = results[0].plot()
-    st.image(annotated_image, caption='Detected Image', use_column_width=True)
+    # Display the annotated image
+    st.image(annotated_image, caption='Detected Image with Confidences', use_column_width=True)
