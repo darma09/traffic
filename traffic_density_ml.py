@@ -73,7 +73,7 @@ if uploaded_files:
                 # Check if the person is on a motorcycle
                 on_motorcycle = False
                 for mx1, my1, mx2, my2 in motorcycles:
-                    if (mx1 <= x1 <= mx2 or mx1 <= x2 <= mx2) and (my1 <= y1 <= my2 or my1 <= y2 <= my2):
+                    if mx1 <= x1 <= mx2 and mx1 <= x2 <= mx2 and my1 <= y1 <= my2 and my1 <= y2 <= my2:
                         on_motorcycle = True
                         break
                 if not on_motorcycle:
