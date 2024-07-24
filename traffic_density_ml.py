@@ -42,11 +42,11 @@ def preprocess_image(image):
 
 # Colors for different classes
 COLORS = {
-    'car': (0, 255, 0),            # Green
-    'motorcycle': (0, 0, 255),     # Red
-    'bus': (255, 0, 0),            # Blue
-    'truck': (255, 255, 0),        # Cyan
-    'person': (255, 0, 255)        # Magenta
+    'car': (0, 255, 0),          # Green
+    'motorcycle': (0, 0, 255),   # Red
+    'bus': (255, 0, 0),          # Blue
+    'truck': (255, 255, 0),      # Cyan
+    'person': (255, 0, 255),     # Magenta
 }
 
 # Streamlit app title
@@ -109,9 +109,6 @@ if uploaded_files:
         # Convert image back to PIL format for displaying
         processed_image = Image.fromarray(processed_image)
         st.image(processed_image, caption='Processed Image with Bounding Boxes', use_column_width=True)
-
-        # Show detailed results
-        st.write(df)
 
 # Basic data analysis
 st.subheader("Basic Data Analysis")
