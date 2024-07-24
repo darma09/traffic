@@ -10,7 +10,7 @@ csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Intersta
 data = pd.read_csv(csv_url)
 
 # Load the pre-trained YOLOv5 model from PyTorch Hub
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+model = torch.hub.load('ultralytics/yolov5', 'yolov5x')  # Using a more advanced model for better accuracy
 
 # Function to preprocess image for YOLOv5
 def preprocess_image(image):
@@ -46,11 +46,19 @@ if uploaded_files:
         processed_image = preprocess_image(img)
         
         # Perform object detection using YOLOv5
-        results = model(processed_image)
+        results = model(processed_image, size=1280)  # Increase size for better accuracy
         df = results.pandas().xyxy[0]
 
         # Draw bounding boxes and labels on the image
         detected_people = 0
+        motorcycles = []
+
+        # Identify motorcycles first
+        for _, row in df.iterrows():
+            if row['name'] == 'motorcycle':
+                motorcycles.append((row['xmin'], row['ymin'], row['xmax'], row['ymax']))
+
+        # Draw bounding boxes and count people excluding those on motorcycles
         for _, row in df.iterrows():
             label = row['name']
             confidence = row['confidence'] * 100  # Convert to percentage
@@ -62,14 +70,13 @@ if uploaded_files:
             cv2.putText(processed_image, f'{label} {confidence:.0f}%', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
             
             if label == 'person':
-                person_on_motorcycle = False
-                for _, other_row in df.iterrows():
-                    if other_row['name'] == 'motorcycle':
-                        mx1, my1, mx2, my2 = int(other_row['xmin']), int(other_row['ymin']), int(other_row['xmax']), int(other_row['ymax'])
-                        if x1 >= mx1 and x2 <= mx2 and y1 >= my1 and y2 <= my2:
-                            person_on_motorcycle = True
-                            break
-                if not person_on_motorcycle:
+                # Check if the person is on a motorcycle
+                on_motorcycle = False
+                for mx1, my1, mx2, my2 in motorcycles:
+                    if x1 >= mx1 and y1 >= my1 and x2 <= mx2 and y2 <= my2:
+                        on_motorcycle = True
+                        break
+                if not on_motorcycle:
                     detected_people += 1
 
         # Count vehicles
