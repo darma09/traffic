@@ -12,9 +12,21 @@ from tensorflow.keras.models import load_model
 csv_url = "https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv"
 data = pd.read_csv(csv_url)
 
-# Load the pre-trained CNN model
+# Path to the model
 model_path = "traffic_cnn_model.h5"
-model = load_model(model_path)
+
+# Function to load the model
+def load_cnn_model(path):
+    try:
+        model = load_model(path)
+        st.success("Model loaded successfully.")
+        return model
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return None
+
+# Load the pre-trained CNN model
+model = load_cnn_model(model_path)
 
 # Function to preprocess image
 def preprocess_image(image):
@@ -42,12 +54,13 @@ if uploaded_files:
         img = Image.open(uploaded_file)
         st.image(img, caption='Uploaded Image', use_column_width=True)
 
-        # Preprocess the image
-        processed_image = preprocess_image(img)
-        
-        # Perform image analysis using the CNN model
-        prediction = model.predict(processed_image)
-        st.write(f"Prediction: {np.argmax(prediction)}")
+        if model:
+            # Preprocess the image
+            processed_image = preprocess_image(img)
+            
+            # Perform image analysis using the CNN model
+            prediction = model.predict(processed_image)
+            st.write(f"Prediction: {np.argmax(prediction)}")
 
 # Basic data analysis
 st.subheader("Basic Data Analysis")
