@@ -29,7 +29,11 @@ model_path = Path("yolov5n-seg.pt")
 if not model_path.exists():
     st.error("Model file yolov5n-seg.pt not found. Please download it from the YOLOv5 repository and place it in the project directory.")
 else:
-    model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
+    try:
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
+    except Exception as e:
+        st.error(f"Error loading the model: {str(e)}")
+        raise e
 
 # Function to preprocess image for YOLOv5
 def preprocess_image(image):
@@ -38,11 +42,11 @@ def preprocess_image(image):
 
 # Colors for different classes
 COLORS = {
-    'car': (0, 255, 0),        # Green
-    'motorcycle': (0, 0, 255), # Red
-    'bus': (255, 0, 0),        # Blue
-    'truck': (255, 255, 0),    # Cyan
-    'person': (255, 0, 255)    # Magenta
+    'car': (0, 255, 0),            # Green
+    'motorcycle': (0, 0, 255),     # Red
+    'bus': (255, 0, 0),            # Blue
+    'truck': (255, 255, 0),        # Cyan
+    'person': (255, 0, 255)        # Magenta
 }
 
 # Streamlit app title
@@ -63,7 +67,7 @@ if uploaded_files:
 
         # Preprocess the image
         processed_image = preprocess_image(img)
-        
+
         # Perform object detection using YOLOv5
         results = model(processed_image, size=1280)  # Increase size for better accuracy
         df = results.pandas().xyxy[0]
@@ -72,22 +76,18 @@ if uploaded_files:
         detected_people = 0
         motorcycles = []
 
-        # Identify motorcycles first
         for _, row in df.iterrows():
             if row['name'] == 'motorcycle':
                 motorcycles.append((row['xmin'], row['ymin'], row['xmax'], row['ymax']))
-
-        # Draw bounding boxes and count people excluding those on motorcycles
-        for _, row in df.iterrows():
             label = row['name']
             confidence = row['confidence'] * 100  # Convert to percentage
             if confidence < 50:  # Only consider detections with confidence above 50%
                 continue
             x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-            color = COLORS.get(label, (255, 255, 255)) # Default to white if the class is not in COLORS
+            color = COLORS.get(label, (255, 255, 255))  # Default to white if the class is not in COLORS
             cv2.rectangle(processed_image, (x1, y1), (x2, y2), color, 2)
             cv2.putText(processed_image, f'{label} {confidence:.0f}%', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-            
+
             if label == 'person':
                 # Check if the person is on a motorcycle
                 on_motorcycle = False
@@ -105,7 +105,7 @@ if uploaded_files:
         st.write(f"Number of cars: {num_cars}")
         st.write(f"Number of motorcycles: {num_motorcycles}")
         st.write(f"Number of people: {detected_people}")
-        
+
         # Convert image back to PIL format for displaying
         processed_image = Image.fromarray(processed_image)
         st.image(processed_image, caption='Processed Image with Bounding Boxes', use_column_width=True)
