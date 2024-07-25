@@ -107,7 +107,7 @@ def process_image(uploaded_file, model):
 
     counts['person'] = best_person_count
 
-    # Draw bounding boxes for motorcycles and cars
+    # Draw bounding boxes for motorcycles and cars without additional labels
     result_image_np = np.array(result_image)
     for (mx1, my1, mx2, my2) in motorcycle_boxes:
         result_image_np = cv2.rectangle(result_image_np, (int(mx1), int(my1)), (int(mx2), int(my2)), (0, 255, 0), 2)
