@@ -1,16 +1,15 @@
 import streamlit as st
 import pandas as pd
-from PIL import Image
 import numpy as np
+import joblib
+import urllib.request
+from PIL import Image
+import cv2
 import os
 from ultralytics import YOLO
-import cv2
-from sklearn.ensemble import RandomForestClassifier
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import img_to_array
-import joblib
-import urllib.request
 
 # Load CSV data
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
@@ -30,9 +29,9 @@ except ImportError:
 
 # Load the pre-trained YOLOv8 model
 try:
-    model = YOLO('yolov8x.pt')  # Using the more accurate model
+    model_yolo = YOLO('yolov8x.pt')  # Using the more accurate model
 except Exception as e:
-    st.error(f"Error loading the model: {str(e)}")
+    st.error(f"Error loading the YOLO model: {str(e)}")
     raise e
 
 # Function to preprocess image for YOLOv8
@@ -53,15 +52,15 @@ def extract_features(image):
     features = model_cnn.predict(image)
     return features.flatten()
 
-# Download the Random Forest model from GitHub
-url = 'https://github.com/darma09/traffic/raw/main/random_forest_model.pkl'  # Update this URL to point to your GitHub file
+# Download the Random Forest model from Google Drive
+url = 'https://drive.google.com/uc?id=1l5PvNkp3Lq8O9U41UvuW4MfaMCLyo57W'
 model_path = 'random_forest_model.pkl'
 urllib.request.urlretrieve(url, model_path)
 
 # Load the pre-trained Random Forest model
 random_forest_model = joblib.load(model_path)
 
-# Example function to classify objects using Random Forest
+# Function to classify objects using Random Forest
 def classify_object(features):
     return random_forest_model.predict([features])[0]
 
@@ -95,7 +94,7 @@ if uploaded_file is not None:
 
     # Preprocess and make predictions
     processed_image = preprocess_image(image)
-    results = model(processed_image)
+    results = model_yolo(processed_image)
 
     # Initialize counters and bounding boxes
     car_count = 0
