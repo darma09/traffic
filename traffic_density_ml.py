@@ -55,10 +55,13 @@ def extract_features(image):
 # Download the Random Forest model from Google Drive
 url = 'https://drive.google.com/uc?id=1l5PvNkp3Lq8O9U41UvuW4MfaMCLyo57W'
 model_path = 'random_forest_model.pkl'
-urllib.request.urlretrieve(url, model_path)
-
-# Load the pre-trained Random Forest model
-random_forest_model = joblib.load(model_path)
+try:
+    urllib.request.urlretrieve(url, model_path)
+    random_forest_model = joblib.load(model_path)
+    st.write("Random Forest model loaded successfully.")
+except Exception as e:
+    st.error(f"Error loading the Random Forest model: {str(e)}")
+    raise e
 
 # Function to classify objects using Random Forest
 def classify_object(features):
