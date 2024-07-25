@@ -1,62 +1,24 @@
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import os
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+import joblib
 
-# Define directories for training and validation datasets
-train_dir = 'path_to_train_data'
-validation_dir = 'path_to_validation_data'
+# Load CSV data
+csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
+data = pd.read_csv(csv_url)
 
-# Parameters
-img_width, img_height = 150, 150
-batch_size = 32
-epochs = 50
+# Preprocess the data - this is a generic example, adjust according to your dataset
+X = data.drop(columns=['traffic_volume'])  # Replace 'traffic_volume' with the actual target column name
+y = data['traffic_volume']  # Replace 'traffic_volume' with the actual target column name
 
-# Data augmentation and rescaling
-train_datagen = ImageDataGenerator(
-    rescale=1.0/255,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True)
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-validation_datagen = ImageDataGenerator(rescale=1.0/255)
+# Train the Random Forest model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
 
-train_generator = train_datagen.flow_from_directory(
-    train_dir,
-    target_size=(img_width, img_height),
-    batch_size=batch_size,
-    class_mode='binary')
+# Save the trained model to a .pkl file
+joblib.dump(model, 'random_forest_model.pkl')
 
-validation_generator = validation_datagen.flow_from_directory(
-    validation_dir,
-    target_size=(img_width, img_height),
-    batch_size=batch_size,
-    class_mode='binary')
-
-# Model building
-model = Sequential([
-    Conv2D(32, (3, 3), activation='relu', input_shape=(img_width, img_height, 3)),
-    MaxPooling2D(pool_size=(2, 2)),
-    Conv2D(64, (3, 3), activation='relu'),
-    MaxPooling2D(pool_size=(2, 2)),
-    Conv2D(128, (3, 3), activation='relu'),
-    MaxPooling2D(pool_size=(2, 2)),
-    Flatten(),
-    Dense(512, activation='relu'),
-    Dropout(0.5),
-    Dense(1, activation='sigmoid')
-])
-
-model.compile(loss='binary_crossentropy',
-              optimizer='adam',
-              metrics=['accuracy'])
-
-# Model training
-model.fit(
-    train_generator,
-    epochs=epochs,
-    validation_data=validation_generator)
-
-# Save the model
-model.save('traffic_cnn_model.h5')
+print("Model training complete and saved as random_forest_model.pkl")
