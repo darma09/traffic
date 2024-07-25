@@ -1,21 +1,22 @@
 import streamlit as st
-import os
-import cv2
+import pandas as pd
 import numpy as np
+import cv2
 from PIL import Image
 from io import BytesIO
+import requests
+import io
 
 # Function to load YOLO model
 @st.cache_resource
 def load_yolo_model():
-    # Load YOLO model here
     net = cv2.dnn.readNet("yolov4.weights", "yolov4.cfg")
     layer_names = net.getLayerNames()
     output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
     return net, output_layers
 
 # Function to process uploaded image
-def process_image(uploaded_file):
+def process_image(uploaded_file, net, output_layers, classes):
     image = Image.open(uploaded_file)
     image = np.array(image)
     height, width = image.shape[:2]
@@ -34,7 +35,6 @@ def process_image(uploaded_file):
             class_id = np.argmax(scores)
             confidence = scores[class_id]
             if confidence > 0.5:
-                # Object detected
                 center_x = int(detection[0] * width)
                 center_y = int(detection[1] * height)
                 w = int(detection[2] * width)
@@ -57,21 +57,37 @@ def process_image(uploaded_file):
     return image
 
 # Streamlit app
-st.title("Image Upload and Object Detection with YOLO")
-st.write("Upload an image and the application will detect objects using the latest YOLO model.")
+st.title("Data Analysis and Object Detection App")
 
-# Load YOLO model
-net, output_layers = load_yolo_model()
+# Step 1: Download CSV file
+csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
+csv_data = requests.get(csv_url).content
+data = pd.read_csv(io.StringIO(csv_data.decode('utf-8')))
 
-# Load class labels
-with open("coco.names", "r") as f:
-    classes = [line.strip() for line in f.readlines()]
+# Step 2: Analyze CSV file
+st.write("CSV Data Analysis")
+st.write(data.head())
 
-# File uploader
+# Step 3: Display CSV file in Streamlit
+st.dataframe(data)
+
+# Step 4: File uploader for image
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+
 if uploaded_file is not None:
-    st.write("Processing...")
-    result_image = process_image(uploaded_file)
+    st.write("Processing image...")
+    
+    # Load YOLO model
+    net, output_layers = load_yolo_model()
+
+    # Load class labels
+    with open("coco.names", "r") as f:
+        classes = [line.strip() for line in f.readlines()]
+
+    # Step 5: Analyze the uploaded image
+    result_image = process_image(uploaded_file, net, output_layers, classes)
+
+    # Step 6: Display the result of image analysis
     st.image(result_image, caption='Processed Image', use_column_width=True)
 else:
     st.write("Please upload an image file.")
