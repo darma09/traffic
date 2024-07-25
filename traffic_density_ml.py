@@ -20,8 +20,18 @@ def load_data_from_url(url):
     data = pd.read_csv(drive_file)
     return data
 
+def preprocess_image(image):
+    # Convert image to RGB if it's in a different mode
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    
+    # Resize image to a standard size to handle different resolutions
+    image = image.resize((640, 640))
+    return image
+
 def process_image(uploaded_file, model):
     image = Image.open(uploaded_file)
+    image = preprocess_image(image)
     results = model(image)
     results.render()  # updates results.imgs with boxes and labels
 
