@@ -70,10 +70,6 @@ def process_image(uploaded_file, model):
     image = Image.open(uploaded_file)
     image = preprocess_image(image)
     results = model(image)
-    results.render()  # updates results.imgs with boxes and labels
-
-    # Convert result image to display in streamlit
-    result_image = Image.fromarray(results.ims[0])
     
     # Count specific objects and remove persons riding motorcycles
     labels = results.names
@@ -108,15 +104,15 @@ def process_image(uploaded_file, model):
     counts['person'] = best_person_count
 
     # Draw bounding boxes for motorcycles and cars without additional labels
-    result_image_np = np.array(result_image)
+    image_np = np.array(image)
     for (mx1, my1, mx2, my2) in motorcycle_boxes:
-        result_image_np = cv2.rectangle(result_image_np, (int(mx1), int(my1)), (int(mx2), int(my2)), (0, 255, 0), 2)
-        result_image_np = cv2.putText(result_image_np, "motorcycle", (int(mx1), int(my1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        image_np = cv2.rectangle(image_np, (int(mx1), int(my1)), (int(mx2), int(my2)), (0, 255, 0), 2)
+        image_np = cv2.putText(image_np, "motorcycle", (int(mx1), int(my1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     for (cx1, cy1, cx2, cy2) in car_boxes:
-        result_image_np = cv2.rectangle(result_image_np, (int(cx1), int(cy1)), (int(cx2), int(cy2)), (255, 0, 0), 2)
-        result_image_np = cv2.putText(result_image_np, "car", (int(cx1), int(cy1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        image_np = cv2.rectangle(image_np, (int(cx1), int(cy1)), (int(cx2), int(cy2)), (255, 0, 0), 2)
+        image_np = cv2.putText(image_np, "car", (int(cx1), int(cy1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
-    result_image = Image.fromarray(result_image_np)
+    result_image = Image.fromarray(image_np)
 
     # Logging for evaluation
     st.write(f"Best IoU threshold: {best_threshold}")
