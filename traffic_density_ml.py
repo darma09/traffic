@@ -54,7 +54,7 @@ def extract_features(image):
 
 # Download the Random Forest model from Google Drive
 url = 'https://drive.google.com/uc?id=1l5PvNkp3Lq8O9U41UvuW4MfaMCLyo57W'
-model_path = 'random_forest_model.pkl'
+model_path = 'Random_forest_model.pkl'
 try:
     gdown.download(url, model_path, quiet=False)
     random_forest_model = joblib.load(model_path)
