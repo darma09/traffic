@@ -79,7 +79,8 @@ def process_image(uploaded_file, model):
             counts['motorcycle'] += 1
 
     # Check if persons are within the motorcycle bounding boxes using IoU
-    iou_threshold = 0.5  # Set a threshold for IoU
+    iou_threshold = 0.7  # Increased threshold for better accuracy
+    refined_person_count = 0
     for (px1, py1, px2, py2) in person_boxes:
         is_riding = False
         for (mx1, my1, mx2, my2) in motorcycle_boxes:
@@ -88,7 +89,9 @@ def process_image(uploaded_file, model):
                 is_riding = True
                 break
         if not is_riding:
-            counts['person'] += 1
+            refined_person_count += 1
+
+    counts['person'] = refined_person_count
 
     # Draw bounding boxes for motorcycles only
     result_image_np = np.array(result_image)
@@ -97,6 +100,10 @@ def process_image(uploaded_file, model):
         result_image_np = cv2.putText(result_image_np, "motorcycle", (int(mx1), int(my1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     result_image = Image.fromarray(result_image_np)
+
+    # Logging for evaluation
+    st.write(f"Total persons detected: {len(person_boxes)}")
+    st.write(f"Persons removed (riding motorcycles): {len(person_boxes) - refined_person_count}")
 
     return result_image, counts
 
