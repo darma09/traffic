@@ -30,6 +30,29 @@ def preprocess_image(image):
     image = image.resize((640, 640))
     return image
 
+def calculate_iou(box1, box2):
+    # Calculate the intersection over union (IoU) of two bounding boxes.
+    x1, y1, x2, y2 = box1
+    x1_, y1_, x2_, y2_ = box2
+    
+    # Determine the coordinates of the intersection rectangle
+    xi1 = max(x1, x1_)
+    yi1 = max(y1, y1_)
+    xi2 = min(x2, x2_)
+    yi2 = min(y2, y2_)
+    
+    # Calculate area of the intersection rectangle
+    inter_area = max(0, xi2 - xi1) * max(0, yi2 - yi1)
+    
+    # Calculate the area of both bounding boxes
+    box1_area = (x2 - x1) * (y2 - y1)
+    box2_area = (x2_ - x1_) * (y2_ - y1_)
+    
+    # Calculate the intersection over union by taking the intersection area and dividing it by the sum of prediction + ground-truth areas - inter_area
+    iou = inter_area / float(box1_area + box2_area - inter_area)
+    
+    return iou
+
 def process_image(uploaded_file, model):
     image = Image.open(uploaded_file)
     image = preprocess_image(image)
@@ -55,12 +78,16 @@ def process_image(uploaded_file, model):
             motorcycle_boxes.append((x1, y1, x2, y2))
             counts['motorcycle'] += 1
 
-    # Check if persons are within the motorcycle bounding boxes
+    # Check if persons are within the motorcycle bounding boxes using IoU
+    iou_threshold = 0.5  # Set a threshold for IoU
     for (px1, py1, px2, py2) in person_boxes:
+        is_riding = False
         for (mx1, my1, mx2, my2) in motorcycle_boxes:
-            if px1 >= mx1 and py1 >= my1 and px2 <= mx2 and py2 <= my2:
+            iou = calculate_iou((px1, py1, px2, py2), (mx1, my1, mx2, my2))
+            if iou > iou_threshold:
+                is_riding = True
                 break
-        else:
+        if not is_riding:
             counts['person'] += 1
 
     # Draw bounding boxes for motorcycles only
