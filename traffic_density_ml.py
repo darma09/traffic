@@ -24,7 +24,10 @@ def process_image(uploaded_file, model):
     image = Image.open(uploaded_file)
     results = model(image)
     results.render()  # updates results.imgs with boxes and labels
-    return Image.fromarray(results.imgs[0])
+    
+    # Convert result image to display in streamlit
+    result_image = Image.fromarray(results.ims[0])  # Note: 'ims' attribute used here
+    return result_image
 
 # Streamlit app
 st.title("Data Analysis and Object Detection App")
