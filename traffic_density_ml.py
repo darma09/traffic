@@ -38,29 +38,47 @@ def process_image(uploaded_file, model):
     # Convert result image to display in streamlit
     result_image = Image.fromarray(results.ims[0])
     
-    # Count specific objects
+    # Count specific objects and adjust bounding boxes
     labels = results.names
     counts = {"car": 0, "motorcycle": 0, "person": 0}
-    boxes_to_draw = []
+    motorcycle_boxes = []
+    person_boxes = []
+    adjusted_boxes = []
+
     for pred in results.pred[0]:
         label = labels[int(pred[-1])]
+        bbox = pred[:4].tolist()
+        if label == "motorcycle":
+            motorcycle_boxes.append(bbox)
+        elif label == "person":
+            person_boxes.append(bbox)
         if label in counts:
-            if label == "motorcycle":
-                counts[label] += 1
-                boxes_to_draw.append(pred[:4])  # Save the box for motorcycles
-            elif label == "car":
-                counts[label] += 1
-                boxes_to_draw.append(pred[:4])  # Save the box for cars
-            elif label == "person":
-                counts[label] += 1  # Count persons but do not draw boxes
-                # Optionally, implement further logic to exclude persons on motorcycles
+            counts[label] += 1
 
-    # Draw boxes on the image for motorcycles and cars only
-    for box in boxes_to_draw:
-        x1, y1, x2, y2 = map(int, box)
-        draw = ImageDraw.Draw(result_image)
-        draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
+    # Adjust the counting: check if a person is on a motorcycle
+    for person_box in person_boxes:
+        person_center = [(person_box[0] + person_box[2]) / 2, (person_box[1] + person_box[3]) / 2]
+        on_motorcycle = False
+        for motorcycle_box in motorcycle_boxes:
+            if (motorcycle_box[0] <= person_center[0] <= motorcycle_box[2]) and (motorcycle_box[1] <= person_center[1] <= motorcycle_box[3]):
+                on_motorcycle = True
+                break
+        if on_motorcycle:
+            counts["person"] -= 1
+        else:
+            adjusted_boxes.append((*person_box, 'person'))
 
+    for motorcycle_box in motorcycle_boxes:
+        adjusted_boxes.append((*motorcycle_box, 'motorcycle'))
+
+    # Draw adjusted bounding boxes on the image
+    result_image = np.array(result_image)
+    for box in adjusted_boxes:
+        x1, y1, x2, y2, label = box
+        cv2.rectangle(result_image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+        cv2.putText(result_image, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+    
+    result_image = Image.fromarray(result_image)
     return result_image, counts
 
 # Streamlit app
