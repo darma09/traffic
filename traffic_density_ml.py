@@ -10,22 +10,36 @@ import io
 # Function to load YOLO model
 @st.cache_resource
 def load_yolo_model():
-    net = cv2.dnn.readNet("yolov4.weights", "yolov4.cfg")
-    layer_names = net.getLayerNames()
-    output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
-    return net, output_layers
+    try:
+        net = cv2.dnn.readNet("yolov4.weights", "yolov4.cfg")
+        layer_names = net.getLayerNames()
+        output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
+        return net, output_layers
+    except cv2.error as e:
+        st.error("Failed to load YOLO model. Please ensure 'yolov4.weights' and 'yolov4.cfg' are available.")
+        raise e
 
-# Function to process uploaded image
+@st.cache_resource
+def load_data_from_url(url):
+    response = requests.get(url)
+    drive_file = io.StringIO(response.content.decode('utf-8'))
+    data = pd.read_csv(drive_file)
+    return data
+
+@st.cache_resource
+def load_classes():
+    with open("coco.names", "r") as f:
+        classes = [line.strip() for line in f.readlines()]
+    return classes
+
 def process_image(uploaded_file, net, output_layers, classes):
     image = Image.open(uploaded_file)
     image = np.array(image)
     height, width = image.shape[:2]
-    
-    # Detecting objects in the image
     blob = cv2.dnn.blobFromImage(image, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
     net.setInput(blob)
     outs = net.forward(output_layers)
-    
+
     class_ids = []
     confidences = []
     boxes = []
@@ -44,16 +58,16 @@ def process_image(uploaded_file, net, output_layers, classes):
                 boxes.append([x, y, w, h])
                 confidences.append(float(confidence))
                 class_ids.append(class_id)
-    
+
     indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
-    
+
     for i in range(len(boxes)):
         if i in indexes:
             x, y, w, h = boxes[i]
             label = str(classes[class_ids[i]])
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-    
+
     return image
 
 # Streamlit app
@@ -61,10 +75,7 @@ st.title("Data Analysis and Object Detection App")
 
 # Step 1: Download CSV file
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
-csv_data = requests.get(csv_url).content
-data = pd.read_csv(io.StringIO(csv_data.decode('utf-8')))
-
-# Step 2: Analyze CSV file
+data = load_data_from_url(csv_url)
 st.write("CSV Data Analysis")
 st.write(data.head())
 
@@ -81,8 +92,7 @@ if uploaded_file is not None:
     net, output_layers = load_yolo_model()
 
     # Load class labels
-    with open("coco.names", "r") as f:
-        classes = [line.strip() for line in f.readlines()]
+    classes = load_classes()
 
     # Step 5: Analyze the uploaded image
     result_image = process_image(uploaded_file, net, output_layers, classes)
