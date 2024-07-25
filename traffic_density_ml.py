@@ -10,6 +10,7 @@ from tensorflow.keras.applications import VGG16
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import img_to_array
 import joblib
+import urllib.request
 
 # Load CSV data
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
@@ -52,8 +53,13 @@ def extract_features(image):
     features = model_cnn.predict(image)
     return features.flatten()
 
+# Download the Random Forest model from GitHub
+url = 'https://github.com/your-username/your-repo/raw/main/random_forest_model.pkl'  # Update this URL to point to your GitHub file
+model_path = 'random_forest_model.pkl'
+urllib.request.urlretrieve(url, model_path)
+
 # Load the pre-trained Random Forest model
-random_forest_model = joblib.load('random_forest_model.pkl')
+random_forest_model = joblib.load(model_path)
 
 # Example function to classify objects using Random Forest
 def classify_object(features):
@@ -68,7 +74,7 @@ def calculate_iou(box1, box2):
     inter_x_min = max(x1_min, x2_min)
     inter_y_min = max(y1_min, y2_min)
     inter_x_max = min(x1_max, x2_max)
-    inter_y_max = min(y1_max, y2_max)
+    inter_y_max = max(y1_max, y2_max)
     inter_area = max(0, inter_x_max - inter_x_min + 1) * max(0, inter_y_max - inter_y_min + 1)
 
     # Calculate union
