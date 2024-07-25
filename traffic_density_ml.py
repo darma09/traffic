@@ -38,61 +38,39 @@ def process_image(uploaded_file, model):
     # Convert result image to display in streamlit
     result_image = Image.fromarray(results.ims[0])
     
-    # Count specific objects
+    # Count specific objects and remove persons riding motorcycles
     labels = results.names
-    counts = {"car": 0, "motorcycle": 0, "person": 0}
-    boxes = []
-
-    for pred in results.pred[0]:
-        label = labels[int(pred[-1])]
-        if label == "motorcycle":
-            # Check if there's a person riding the motorcycle
-            motorcycle_box = pred[:4]
-            for person_pred in results.pred[0]:
-                if labels[int(person_pred[-1])] == "person":
-                    person_box = person_pred[:4]
-                    iou = calculate_iou(motorcycle_box, person_box)
-                    if iou > 0.5:  # Assuming a threshold of 0.5 for IOU
-                        counts["motorcycle"] += 1
-                        boxes.append(motorcycle_box)
-                        break
-            else:
-                counts["motorcycle"] += 1
-                boxes.append(motorcycle_box)
-        elif label == "car":
-            counts["car"] += 1
-            boxes.append(pred[:4])
-        elif label == "person":
-            counts["person"] += 1
-            boxes.append(pred[:4])
-
-    draw_boxes(image, boxes)
+    boxes = results.xyxy[0].cpu().numpy()
     
+    counts = {"car": 0, "motorcycle": 0, "person": 0}
+    person_boxes = []
+    motorcycle_boxes = []
+
+    for i, (x1, y1, x2, y2, conf, cls) in enumerate(boxes):
+        label = labels[int(cls)]
+        if label == "person":
+            person_boxes.append((x1, y1, x2, y2))
+        elif label == "motorcycle":
+            motorcycle_boxes.append((x1, y1, x2, y2))
+            counts['motorcycle'] += 1
+
+    # Check if persons are within the motorcycle bounding boxes
+    for (px1, py1, px2, py2) in person_boxes:
+        for (mx1, my1, mx2, my2) in motorcycle_boxes:
+            if px1 >= mx1 and py1 >= my1 and px2 <= mx2 and py2 <= my2:
+                break
+        else:
+            counts['person'] += 1
+
+    # Draw bounding boxes for motorcycles only
+    result_image_np = np.array(result_image)
+    for (mx1, my1, mx2, my2) in motorcycle_boxes:
+        result_image_np = cv2.rectangle(result_image_np, (int(mx1), int(my1)), (int(mx2), int(my2)), (0, 255, 0), 2)
+        result_image_np = cv2.putText(result_image_np, "motorcycle", (int(mx1), int(my1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    result_image = Image.fromarray(result_image_np)
+
     return result_image, counts
-
-def calculate_iou(box1, box2):
-    # Calculate intersection over union (IOU) between two boxes
-    x1, y1, x2, y2 = box1
-    x3, y3, x4, y4 = box2
-
-    xi1 = max(x1, x3)
-    yi1 = max(y1, y3)
-    xi2 = min(x2, x4)
-    yi2 = min(y2, y4)
-    inter_area = max(xi2 - xi1 + 1, 0) * max(yi2 - yi1 + 1, 0)
-
-    box1_area = (x2 - x1 + 1) * (y2 - y1 + 1)
-    box2_area = (x4 - x3 + 1) * (y4 - y3 + 1)
-    union_area = box1_area + box2_area - inter_area
-
-    iou = inter_area / union_area
-    return iou
-
-def draw_boxes(image, boxes):
-    draw = ImageDraw.Draw(image)
-    for box in boxes:
-        draw.rectangle(box, outline="red", width=2)
-    return image
 
 # Streamlit app
 st.title("Data Analysis and Object Detection App")
