@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import joblib
 import gdown
-import os
-import sklearn
 
 @st.cache_data
 def load_csv_data(url):
@@ -30,6 +28,16 @@ def download_and_load_model(url, model_path):
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
 data = load_csv_data(csv_url)
 st.dataframe(data)  # Display the loaded CSV file in Streamlit
+
+# Install scikit-learn
+try:
+    import sklearn
+    st.write(f"scikit-learn version: {sklearn.__version__}")
+except ImportError:
+    import subprocess
+    subprocess.check_call(["pip", "install", "scikit-learn"])
+    import sklearn
+    st.write(f"scikit-learn version: {sklearn.__version__}")
 
 # Download and load the Random Forest model from Google Drive
 url = 'https://drive.google.com/uc?id=1l5PvNkp3Lq8O9U41UvuW4MfaMCLyo57W'
