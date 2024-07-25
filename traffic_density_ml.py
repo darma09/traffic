@@ -10,7 +10,7 @@ import io
 # Function to load YOLOv5 model
 @st.cache_resource
 def load_yolo_model():
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)  # Using YOLOv5x for better accuracy
     return model
 
 @st.cache_resource
@@ -24,10 +24,19 @@ def process_image(uploaded_file, model):
     image = Image.open(uploaded_file)
     results = model(image)
     results.render()  # updates results.imgs with boxes and labels
-    
+
     # Convert result image to display in streamlit
-    result_image = Image.fromarray(results.ims[0])  # Note: 'ims' attribute used here
-    return result_image
+    result_image = Image.fromarray(results.ims[0])
+    
+    # Count specific objects
+    labels = results.names
+    counts = {"car": 0, "motorcycle": 0, "person": 0}
+    for pred in results.pred[0]:
+        label = labels[int(pred[-1])]
+        if label in counts:
+            counts[label] += 1
+
+    return result_image, counts
 
 # Streamlit app
 st.title("Data Analysis and Object Detection App")
@@ -46,14 +55,19 @@ uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png
 
 if uploaded_file is not None:
     st.write("Processing image...")
-    
+
     # Load YOLOv5 model
     model = load_yolo_model()
 
     # Step 5: Analyze the uploaded image
-    result_image = process_image(uploaded_file, model)
+    result_image, counts = process_image(uploaded_file, model)
 
     # Step 6: Display the result of image analysis
     st.image(result_image, caption='Processed Image', use_column_width=True)
+
+    # Display the counts of cars, motorcycles, and pedestrians
+    st.write(f"Cars detected: {counts['car']}")
+    st.write(f"Motorcycles detected: {counts['motorcycle']}")
+    st.write(f"Pedestrians detected: {counts['person']}")
 else:
     st.write("Please upload an image file.")
