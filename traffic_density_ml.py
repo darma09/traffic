@@ -74,7 +74,7 @@ except ImportError:
 
 # Download and load the Random Forest model from Google Drive
 url = 'https://drive.google.com/uc?id=1l5PvNkp3Lq8O9U41UvuW4MfaMCLyo57W'
-model_path = 'random_forest_model.pkl'
+model_path = 'Random_forest_model.pkl'
 modified_model_path = download_and_modify_model(url, model_path)
 
 # Load the modified model
