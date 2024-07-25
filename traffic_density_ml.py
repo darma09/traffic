@@ -53,6 +53,19 @@ def calculate_iou(box1, box2):
     
     return iou
 
+def refine_person_count(person_boxes, motorcycle_boxes, iou_threshold):
+    refined_person_count = 0
+    for (px1, py1, px2, py2) in person_boxes:
+        is_riding = False
+        for (mx1, my1, mx2, my2) in motorcycle_boxes:
+            iou = calculate_iou((px1, py1, px2, py2), (mx1, my1, mx2, my2))
+            if iou > iou_threshold:
+                is_riding = True
+                break
+        if not is_riding:
+            refined_person_count += 1
+    return refined_person_count
+
 def process_image(uploaded_file, model):
     image = Image.open(uploaded_file)
     image = preprocess_image(image)
@@ -78,20 +91,16 @@ def process_image(uploaded_file, model):
             motorcycle_boxes.append((x1, y1, x2, y2))
             counts['motorcycle'] += 1
 
-    # Check if persons are within the motorcycle bounding boxes using IoU
-    iou_threshold = 0.7  # Increased threshold for better accuracy
-    refined_person_count = 0
-    for (px1, py1, px2, py2) in person_boxes:
-        is_riding = False
-        for (mx1, my1, mx2, my2) in motorcycle_boxes:
-            iou = calculate_iou((px1, py1, px2, py2), (mx1, my1, mx2, my2))
-            if iou > iou_threshold:
-                is_riding = True
-                break
-        if not is_riding:
-            refined_person_count += 1
+    # Evaluate and refine person count across different IoU thresholds
+    best_person_count = len(person_boxes)
+    best_threshold = 0.0
+    for threshold in np.arange(0.1, 1.0, 0.1):
+        refined_person_count = refine_person_count(person_boxes, motorcycle_boxes, threshold)
+        if refined_person_count < best_person_count:
+            best_person_count = refined_person_count
+            best_threshold = threshold
 
-    counts['person'] = refined_person_count
+    counts['person'] = best_person_count
 
     # Draw bounding boxes for motorcycles only
     result_image_np = np.array(result_image)
@@ -102,8 +111,9 @@ def process_image(uploaded_file, model):
     result_image = Image.fromarray(result_image_np)
 
     # Logging for evaluation
+    st.write(f"Best IoU threshold: {best_threshold}")
     st.write(f"Total persons detected: {len(person_boxes)}")
-    st.write(f"Persons removed (riding motorcycles): {len(person_boxes) - refined_person_count}")
+    st.write(f"Persons removed (riding motorcycles): {len(person_boxes) - best_person_count}")
 
     return result_image, counts
 
