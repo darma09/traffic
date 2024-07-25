@@ -6,6 +6,7 @@ from PIL import Image
 from io import BytesIO
 import requests
 import io
+import cv2
 
 # Function to load YOLOv5 model
 @st.cache_resource
