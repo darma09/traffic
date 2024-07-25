@@ -29,8 +29,8 @@ def preprocess_image(image):
     image = image.resize((640, 640))
     return image
 
-def process_image(image_path, model):
-    image = Image.open(image_path)
+def process_image(uploaded_file, model):
+    image = Image.open(uploaded_file)
     image = preprocess_image(image)
     results = model(image)
     results.render()  # updates results.imgs with boxes and labels
@@ -81,20 +81,4 @@ if uploaded_file is not None:
     st.write(f"Motorcycles detected: {counts['motorcycle']}")
     st.write(f"Pedestrians detected: {counts['person']}")
 else:
-    # For the provided example image
-    example_image_path = '/mnt/data/download (1).jpeg'
-    st.write("Processing example image...")
-
-    # Load YOLOv5 model
-    model = load_yolo_model()
-
-    # Process the example image
-    result_image, counts = process_image(example_image_path, model)
-
-    # Display the result of image analysis
-    st.image(result_image, caption='Processed Example Image', use_column_width=True)
-
-    # Display the counts of cars, motorcycles, and pedestrians
-    st.write(f"Cars detected: {counts['car']}")
-    st.write(f"Motorcycles detected: {counts['motorcycle']}")
-    st.write(f"Pedestrians detected: {counts['person']}")
+    st.write("Please upload an image file.")
