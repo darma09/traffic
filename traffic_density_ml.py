@@ -38,48 +38,63 @@ def process_image(uploaded_file, model):
     # Convert result image to display in streamlit
     result_image = Image.fromarray(results.ims[0])
     
-    # Count specific objects and adjust bounding boxes
+    # Count specific objects and filter detections
     labels = results.names
     counts = {"car": 0, "motorcycle": 0, "person": 0}
-    motorcycle_boxes = []
-    person_boxes = []
-    adjusted_boxes = []
-
+    filtered_detections = []
     for pred in results.pred[0]:
         label = labels[int(pred[-1])]
-        bbox = pred[:4].tolist()
         if label == "motorcycle":
-            motorcycle_boxes.append(bbox)
+            counts["motorcycle"] += 1
+            filtered_detections.append(pred)
+        elif label == "car":
+            counts["car"] += 1
+            filtered_detections.append(pred)
         elif label == "person":
-            person_boxes.append(bbox)
-        if label in counts:
-            counts[label] += 1
+            # Check if the person is on a motorcycle by proximity (simplified logic)
+            person_bbox = pred[:4]
+            is_on_motorcycle = False
+            for other_pred in results.pred[0]:
+                other_label = labels[int(other_pred[-1])]
+                if other_label == "motorcycle":
+                    motorcycle_bbox = other_pred[:4]
+                    if is_near(person_bbox, motorcycle_bbox):
+                        is_on_motorcycle = True
+                        break
+            if not is_on_motorcycle:
+                counts["person"] += 1
+                filtered_detections.append(pred)
 
-    # Adjust the counting: check if a person is on a motorcycle
-    for person_box in person_boxes:
-        person_center = [(person_box[0] + person_box[2]) / 2, (person_box[1] + person_box[3]) / 2]
-        on_motorcycle = False
-        for motorcycle_box in motorcycle_boxes:
-            if (motorcycle_box[0] <= person_center[0] <= motorcycle_box[2]) and (motorcycle_box[1] <= person_center[1] <= motorcycle_box[3]):
-                on_motorcycle = True
-                break
-        if on_motorcycle:
-            counts["person"] -= 1
-        else:
-            adjusted_boxes.append((*person_box, 'person'))
+    # Draw boxes for filtered detections
+    for det in filtered_detections:
+        label = labels[int(det[-1])]
+        if label in ["car", "motorcycle"]:
+            x1, y1, x2, y2, conf, cls = det
+            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            cv2.putText(image, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    for motorcycle_box in motorcycle_boxes:
-        adjusted_boxes.append((*motorcycle_box, 'motorcycle'))
-
-    # Draw adjusted bounding boxes on the image
-    result_image = np.array(result_image)
-    for box in adjusted_boxes:
-        x1, y1, x2, y2, label = box
-        cv2.rectangle(result_image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-        cv2.putText(result_image, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-    
-    result_image = Image.fromarray(result_image)
     return result_image, counts
+
+def is_near(bbox1, bbox2, threshold=0.5):
+    """
+    Determine if bbox1 is near bbox2 based on intersection over union (IoU) threshold.
+    """
+    x1_min, y1_min, x1_max, y1_max = bbox1
+    x2_min, y2_min, x2_max, y2_max = bbox2
+    
+    # Calculate intersection
+    inter_min_x = max(x1_min, x2_min)
+    inter_min_y = max(y1_min, y2_min)
+    inter_max_x = min(x1_max, x2_max)
+    inter_max_y = min(y1_max, y2_max)
+    
+    if inter_min_x < inter_max_x and inter_min_y < inter_max_y:
+        inter_area = (inter_max_x - inter_min_x) * (inter_max_y - inter_min_y)
+        bbox1_area = (x1_max - x1_min) * (y1_max - y1_min)
+        bbox2_area = (x2_max - x2_min) * (y2_max - y2_min)
+        iou = inter_area / float(bbox1_area + bbox2_area - inter_area)
+        return iou > threshold
+    return False
 
 # Streamlit app
 st.title("Data Analysis and Object Detection App")
