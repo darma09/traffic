@@ -54,7 +54,7 @@ def extract_features(image):
     return features.flatten()
 
 # Download the Random Forest model from GitHub
-url = 'https://github.com/your-username/your-repo/raw/main/random_forest_model.pkl'  # Update this URL to point to your GitHub file
+url = 'https://github.com/darma09/traffic/raw/main/random_forest_model.pkl'  # Update this URL to point to your GitHub file
 model_path = 'random_forest_model.pkl'
 urllib.request.urlretrieve(url, model_path)
 
@@ -74,7 +74,7 @@ def calculate_iou(box1, box2):
     inter_x_min = max(x1_min, x2_min)
     inter_y_min = max(y1_min, y2_min)
     inter_x_max = min(x1_max, x2_max)
-    inter_y_max = max(y1_max, y2_max)
+    inter_y_max = min(y1_max, y2_max)
     inter_area = max(0, inter_x_max - inter_x_min + 1) * max(0, inter_y_max - inter_y_min + 1)
 
     # Calculate union
