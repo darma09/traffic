@@ -5,7 +5,7 @@ Pillow
 torch
 opencv-python-headless
 ultralytics
-scikit-learn
+scikit-learn==1.0.2
 tensorflow
 joblib
 gdown
