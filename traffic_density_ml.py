@@ -103,7 +103,7 @@ def process_image(uploaded_file, model):
 
     counts['person'] = best_person_count
 
-    # Draw bounding boxes for motorcycles and cars without additional labels
+    # Draw bounding boxes for motorcycles, cars, and pedestrians
     image_np = np.array(image)
     for (mx1, my1, mx2, my2) in motorcycle_boxes:
         image_np = cv2.rectangle(image_np, (int(mx1), int(my1)), (int(mx2), int(my2)), (0, 255, 0), 2)
@@ -111,6 +111,9 @@ def process_image(uploaded_file, model):
     for (cx1, cy1, cx2, cy2) in car_boxes:
         image_np = cv2.rectangle(image_np, (int(cx1), int(cy1)), (int(cx2), int(cy2)), (255, 0, 0), 2)
         image_np = cv2.putText(image_np, "car", (int(cx1), int(cy1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+    for (px1, py1, px2, py2) in person_boxes:
+        image_np = cv2.rectangle(image_np, (int(px1), int(py1)), (int(px2), int(py2)), (0, 0, 255), 2)
+        image_np = cv2.putText(image_np, "person", (int(px1), int(py1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
     result_image = Image.fromarray(image_np)
 
