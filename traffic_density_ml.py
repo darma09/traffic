@@ -11,6 +11,28 @@ from tensorflow.keras.applications import VGG16
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import img_to_array
 
+# Ensure the 'ultralytics' package is installed
+try:
+    import ultralytics
+except ImportError:
+    os.system("pip install ultralytics")
+    import ultralytics
+
+# Ensure the 'gdown' package is installed
+try:
+    import gdown
+except ImportError:
+    os.system("pip install gdown")
+    import gdown
+
+# Ensure a compatible version of scikit-learn is installed
+try:
+    import sklearn
+    from sklearn.ensemble import RandomForestClassifier
+except ImportError:
+    os.system("pip install scikit-learn==1.0.2")
+    from sklearn.ensemble import RandomForestClassifier
+
 # Load CSV data
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
 try:
@@ -19,13 +41,6 @@ try:
 except Exception as e:
     st.error(f"Error loading CSV data: {str(e)}")
     raise e
-
-# Ensure the 'ultralytics' package is installed
-try:
-    import ultralytics
-except ImportError:
-    os.system("pip install ultralytics")
-    import ultralytics
 
 # Load the pre-trained YOLOv8 model
 try:
