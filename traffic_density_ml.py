@@ -41,10 +41,25 @@ def process_image(uploaded_file, model):
     # Count specific objects
     labels = results.names
     counts = {"car": 0, "motorcycle": 0, "person": 0}
+    boxes_to_draw = []
     for pred in results.pred[0]:
         label = labels[int(pred[-1])]
         if label in counts:
-            counts[label] += 1
+            if label == "motorcycle":
+                counts[label] += 1
+                boxes_to_draw.append(pred[:4])  # Save the box for motorcycles
+            elif label == "car":
+                counts[label] += 1
+                boxes_to_draw.append(pred[:4])  # Save the box for cars
+            elif label == "person":
+                counts[label] += 1  # Count persons but do not draw boxes
+                # Optionally, implement further logic to exclude persons on motorcycles
+
+    # Draw boxes on the image for motorcycles and cars only
+    for box in boxes_to_draw:
+        x1, y1, x2, y2 = map(int, box)
+        draw = ImageDraw.Draw(result_image)
+        draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
 
     return result_image, counts
 
