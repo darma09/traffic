@@ -94,11 +94,12 @@ def process_image(uploaded_file, model):
     # Evaluate and refine person count across different IoU thresholds
     best_person_count = len(person_boxes)
     best_threshold = 0.0
-    for threshold in np.arange(0.1, 1.0, 0.1):
-        refined_person_count = refine_person_count(person_boxes, motorcycle_boxes, threshold)
-        if refined_person_count < best_person_count:
-            best_person_count = refined_person_count
-            best_threshold = threshold
+    for _ in range(10):  # Repeat the evaluation 10 times
+        for threshold in np.arange(0.1, 1.0, 0.01):  # Use a smaller step for finer evaluation
+            refined_person_count = refine_person_count(person_boxes, motorcycle_boxes, threshold)
+            if refined_person_count < best_person_count:
+                best_person_count = refined_person_count
+                best_threshold = threshold
 
     counts['person'] = best_person_count
 
