@@ -82,6 +82,7 @@ def process_image(uploaded_file, model):
     counts = {"car": 0, "motorcycle": 0, "person": 0}
     person_boxes = []
     motorcycle_boxes = []
+    car_boxes = []
 
     for i, (x1, y1, x2, y2, conf, cls) in enumerate(boxes):
         label = labels[int(cls)]
@@ -90,6 +91,9 @@ def process_image(uploaded_file, model):
         elif label == "motorcycle":
             motorcycle_boxes.append((x1, y1, x2, y2))
             counts['motorcycle'] += 1
+        elif label == "car":
+            car_boxes.append((x1, y1, x2, y2))
+            counts['car'] += 1
 
     # Evaluate and refine person count across different IoU thresholds
     best_person_count = len(person_boxes)
@@ -103,11 +107,14 @@ def process_image(uploaded_file, model):
 
     counts['person'] = best_person_count
 
-    # Draw bounding boxes for motorcycles only
+    # Draw bounding boxes for motorcycles and cars
     result_image_np = np.array(result_image)
     for (mx1, my1, mx2, my2) in motorcycle_boxes:
         result_image_np = cv2.rectangle(result_image_np, (int(mx1), int(my1)), (int(mx2), int(my2)), (0, 255, 0), 2)
         result_image_np = cv2.putText(result_image_np, "motorcycle", (int(mx1), int(my1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    for (cx1, cy1, cx2, cy2) in car_boxes:
+        result_image_np = cv2.rectangle(result_image_np, (int(cx1), int(cy1)), (int(cx2), int(cy2)), (255, 0, 0), 2)
+        result_image_np = cv2.putText(result_image_np, "car", (int(cx1), int(cy1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
     result_image = Image.fromarray(result_image_np)
 
