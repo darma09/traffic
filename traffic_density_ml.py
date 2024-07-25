@@ -35,7 +35,8 @@ try:
     st.write(f"scikit-learn version: {sklearn.__version__}")
 except ImportError:
     import subprocess
-    subprocess.check_call(["pip", "install", "scikit-learn==1.0.2"])
+    import sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn==1.5.1"])
     import sklearn
     st.write(f"scikit-learn version: {sklearn.__version__}")
 
