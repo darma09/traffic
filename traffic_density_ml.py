@@ -55,6 +55,7 @@ def calculate_iou(box1, box2):
 
 def refine_person_count(person_boxes, motorcycle_boxes, iou_threshold):
     refined_person_count = 0
+    refined_person_boxes = []
     for (px1, py1, px2, py2) in person_boxes:
         is_riding = False
         for (mx1, my1, mx2, my2) in motorcycle_boxes:
@@ -64,7 +65,8 @@ def refine_person_count(person_boxes, motorcycle_boxes, iou_threshold):
                 break
         if not is_riding:
             refined_person_count += 1
-    return refined_person_count
+            refined_person_boxes.append((px1, py1, px2, py2))
+    return refined_person_count, refined_person_boxes
 
 def process_image(uploaded_file, model):
     image = Image.open(uploaded_file)
@@ -94,12 +96,14 @@ def process_image(uploaded_file, model):
     # Evaluate and refine person count across different IoU thresholds
     best_person_count = len(person_boxes)
     best_threshold = 0.0
+    refined_person_boxes = person_boxes
     for _ in range(10):  # Repeat the evaluation 10 times
         for threshold in np.arange(0.1, 1.0, 0.01):  # Use a smaller step for finer evaluation
-            refined_person_count = refine_person_count(person_boxes, motorcycle_boxes, threshold)
+            refined_person_count, refined_person_boxes_temp = refine_person_count(person_boxes, motorcycle_boxes, threshold)
             if refined_person_count < best_person_count:
                 best_person_count = refined_person_count
                 best_threshold = threshold
+                refined_person_boxes = refined_person_boxes_temp
 
     counts['person'] = best_person_count
 
@@ -111,7 +115,7 @@ def process_image(uploaded_file, model):
     for (cx1, cy1, cx2, cy2) in car_boxes:
         image_np = cv2.rectangle(image_np, (int(cx1), int(cy1)), (int(cx2), int(cy2)), (255, 0, 0), 2)
         image_np = cv2.putText(image_np, "car", (int(cx1), int(cy1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-    for (px1, py1, px2, py2) in person_boxes:
+    for (px1, py1, px2, py2) in refined_person_boxes:
         image_np = cv2.rectangle(image_np, (int(px1), int(py1)), (int(px2), int(py2)), (0, 0, 255), 2)
         image_np = cv2.putText(image_np, "person", (int(px1), int(py1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
