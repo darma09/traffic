@@ -129,7 +129,7 @@ def process_image(uploaded_file, model):
     return result_image, counts
 
 # Streamlit app
-st.title("Data Analysis and Object Detection App")
+st.title("Data Analysis and Object Detection App By Darma")
 
 # Step 1: Download CSV file
 csv_url = 'https://raw.githubusercontent.com/darma09/traffic/main/Metro_Interstate_Traffic_Volume.csv'
@@ -161,4 +161,4 @@ if uploaded_file is not None:
     st.write(f"Motorcycles detected: {counts['motorcycle']}")
     st.write(f"Pedestrians detected: {counts['person']}")
 else:
-    st.write("Please upload an image file.")
+    st.write("Please upload an image file, Pastikan foto keadaan lalu lintas.")
